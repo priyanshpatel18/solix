@@ -65,7 +65,7 @@ const Hero = () => (
           </motion.p>
           <motion.div className="space-x-4" variants={slideUp}>
             <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link href="/auth/signin">Get Started for Free</Link>
+              <Link href="/signin">Get Started for Free</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
               <Link href="/features">Learn More</Link>

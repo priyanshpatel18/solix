@@ -62,7 +62,7 @@ export default function Navbar({ session }: NavbarProps) {
             <Button
               variant="outline"
               className="cursor-pointer"
-              onClick={() => router.push("/auth/signin")}
+              onClick={() => router.push("/signin")}
             >
               Sign in
             </Button>
@@ -99,7 +99,7 @@ export default function Navbar({ session }: NavbarProps) {
               variant="outline"
               className="w-full cursor-pointer"
               onClick={() => {
-                router.push("/auth/signin");
+                router.push("/signin");
                 toggleMobileMenu();
               }}
             >
