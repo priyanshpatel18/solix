@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Provider {
+  GOOGLE
+  GITHUB
+}
+
+model User {
+  id            String          @id @default(uuid())
+  name          String?
+  email         String          @unique
+  image         String?
+  createdAt     DateTime        @default(now())
+  accounts      Account[]
+  databases     Database[]
+  indexRequests IndexRequest[]
+  categories    IndexCategory[]
+}
+
+model Account {
+  id                String   @id @default(uuid())
+  provider          Provider
+  providerAccountId String?
+  accessToken       String?
+  refreshToken      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+  userId            String?
+  user              User?    @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerAccountId])
+}
+
+model Database {
+  id           String         @id @default(uuid())
+  name         String
+  host         String
+  port         Int
+  username     String
+  password     String
+  dbName       String
+  createdAt    DateTime       @default(now())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id])
+  IndexRequest IndexRequest[]
+  IndexedData  IndexedData[]
+}
+
+model IndexCategory {
+  id            String         @id @default(uuid())
+  name          String         @unique
+  userId        String
+  user          User           @relation(fields: [userId], references: [id])
+  indexRequests IndexRequest[]
+  IndexedData   IndexedData[]
+}
+
+model IndexRequest {
+  id         String        @id @default(uuid())
+  categoryId String
+  category   IndexCategory @relation(fields: [categoryId], references: [id])
+  userId     String
+  user       User          @relation(fields: [userId], references: [id])
+  databaseId String
+  database   Database      @relation(fields: [databaseId], references: [id])
+  createdAt  DateTime      @default(now())
+}
+
+model IndexedData {
+  id         String        @id @default(uuid())
+  categoryId String
+  category   IndexCategory @relation(fields: [categoryId], references: [id])
+  data       String
+  receivedAt DateTime      @default(now())
+  databaseId String
+  database   Database      @relation(fields: [databaseId], references: [id])
+}
