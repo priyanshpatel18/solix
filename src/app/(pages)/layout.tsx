@@ -29,7 +29,6 @@ export default async function PagesLayout({ children }: PagesLayoutProps) {
     include: {
       databases: true,
       indexRequests: true,
-      categories: true,
     }
   });
 

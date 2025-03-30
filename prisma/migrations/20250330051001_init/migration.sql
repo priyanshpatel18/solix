@@ -1,6 +1,18 @@
 -- CreateEnum
 CREATE TYPE "Provider" AS ENUM ('GOOGLE', 'GITHUB');
 
+-- CreateEnum
+CREATE TYPE "IndexType" AS ENUM ('TRANSACTIONS', 'TOKEN_ACCOUNTS', 'PROGRAM_LOGS', 'NFTS');
+
+-- CreateEnum
+CREATE TYPE "Frequency" AS ENUM ('REAL_TIME', 'HOURLY', 'DAILY');
+
+-- CreateEnum
+CREATE TYPE "TaskStatus" AS ENUM ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED');
+
+-- CreateEnum
+CREATE TYPE "IndexCategory" AS ENUM ('TRANSACTIONS', 'TOKEN_TRANSFERS', 'NFT_MINTS', 'NFT_SALES', 'STAKING_ACCOUNTS', 'SMART_CONTRACTS', 'PROGRAM_EXECUTIONS', 'DEFI_SWAPS', 'LIQUIDITY_POOLS', 'ORACLE_UPDATES', 'GOVERNANCE_VOTES', 'DOMAIN_REGISTRATIONS');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -8,6 +20,7 @@ CREATE TABLE "User" (
     "email" TEXT NOT NULL,
     "image" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "categories" "IndexCategory"[],
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -42,20 +55,15 @@ CREATE TABLE "Database" (
 );
 
 -- CreateTable
-CREATE TABLE "IndexCategory" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-
-    CONSTRAINT "IndexCategory_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "IndexRequest" (
     "id" TEXT NOT NULL,
-    "categoryId" TEXT NOT NULL,
+    "category" "IndexCategory" NOT NULL,
     "userId" TEXT NOT NULL,
     "databaseId" TEXT NOT NULL,
+    "indexType" "IndexType" NOT NULL,
+    "targetAddr" TEXT NOT NULL,
+    "filters" TEXT NOT NULL DEFAULT '',
+    "frequency" "Frequency" NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "IndexRequest_pkey" PRIMARY KEY ("id")
@@ -64,7 +72,7 @@ CREATE TABLE "IndexRequest" (
 -- CreateTable
 CREATE TABLE "IndexedData" (
     "id" TEXT NOT NULL,
-    "categoryId" TEXT NOT NULL,
+    "category" "IndexCategory" NOT NULL,
     "data" TEXT NOT NULL,
     "receivedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "databaseId" TEXT NOT NULL,
@@ -72,11 +80,24 @@ CREATE TABLE "IndexedData" (
     CONSTRAINT "IndexedData_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "IndexingTask" (
+    "id" TEXT NOT NULL,
+    "indexRequestId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "status" "TaskStatus" NOT NULL DEFAULT 'PENDING',
+    "startedAt" TIMESTAMP(3),
+    "completedAt" TIMESTAMP(3),
+    "errorMessage" TEXT,
+
+    CONSTRAINT "IndexingTask_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "IndexCategory_name_key" ON "IndexCategory"("name");
+CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
 
 -- AddForeignKey
 ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -85,19 +106,16 @@ ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId"
 ALTER TABLE "Database" ADD CONSTRAINT "Database_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "IndexCategory" ADD CONSTRAINT "IndexCategory_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "IndexRequest" ADD CONSTRAINT "IndexRequest_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "IndexCategory"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "IndexRequest" ADD CONSTRAINT "IndexRequest_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "IndexRequest" ADD CONSTRAINT "IndexRequest_databaseId_fkey" FOREIGN KEY ("databaseId") REFERENCES "Database"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "IndexedData" ADD CONSTRAINT "IndexedData_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "IndexCategory"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "IndexedData" ADD CONSTRAINT "IndexedData_databaseId_fkey" FOREIGN KEY ("databaseId") REFERENCES "Database"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "IndexedData" ADD CONSTRAINT "IndexedData_databaseId_fkey" FOREIGN KEY ("databaseId") REFERENCES "Database"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "IndexingTask" ADD CONSTRAINT "IndexingTask_indexRequestId_fkey" FOREIGN KEY ("indexRequestId") REFERENCES "IndexRequest"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "IndexingTask" ADD CONSTRAINT "IndexingTask_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

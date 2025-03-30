@@ -1,28 +1,35 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { montserrat } from "@/fonts/fonts";
 import { databaseFormSchema } from "@/schema/zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Session } from "next-auth";
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { User } from "../SessionProvder";
 
 type DatabaseFormValues = z.infer<typeof databaseFormSchema>;
 
 interface DatabaseFormProps {
   setShowStoreDatabaseForm: Dispatch<SetStateAction<boolean>>;
   setCompletedSteps: Dispatch<SetStateAction<number[]>>;
+  setUser: Dispatch<SetStateAction<User | null>>;
 }
 
-export default function StoreDatabaseForm({ setShowStoreDatabaseForm, setCompletedSteps }: DatabaseFormProps) {
+export default function StoreDatabaseForm({ setShowStoreDatabaseForm, setCompletedSteps, setUser }: DatabaseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm({ resolver: zodResolver(databaseFormSchema) });
+
+  useEffect(() => {
+    if (form.formState.isSubmitSuccessful) {
+      setShowStoreDatabaseForm(false);
+    }
+  }, [form.formState.isSubmitSuccessful, setShowStoreDatabaseForm]);
 
   const onSubmit = async (data: DatabaseFormValues) => {
     setIsSubmitting(true);
@@ -36,6 +43,18 @@ export default function StoreDatabaseForm({ setShowStoreDatabaseForm, setComplet
 
       if (response.ok) {
         toast.success("Database connection saved!");
+        const { dbEntry } = await response.json();
+
+        setUser((prevUser) => {
+          if (prevUser) {
+            return {
+              ...prevUser,
+              databases: [...prevUser.databases, dbEntry],
+            };
+          }
+          return prevUser;
+        });
+
         setCompletedSteps((prev) => [...prev, 0]);
       } else {
         const errorData = await response.json();
@@ -51,7 +70,7 @@ export default function StoreDatabaseForm({ setShowStoreDatabaseForm, setComplet
   };
 
   return (
-    <DialogContent>
+    <>
       <DialogHeader>
         <DialogTitle className={`text-2xl font-semibold ${montserrat}`}>Database Setup</DialogTitle>
       </DialogHeader>
@@ -89,6 +108,6 @@ export default function StoreDatabaseForm({ setShowStoreDatabaseForm, setComplet
           {isSubmitting ? "Saving..." : "Save Connection"}
         </Button>
       </form>
-    </DialogContent>
+    </>
   )
 }

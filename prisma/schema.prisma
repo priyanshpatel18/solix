@@ -12,6 +12,46 @@ enum Provider {
   GITHUB
 }
 
+enum IndexType {
+  TRANSACTIONS
+  TOKEN_ACCOUNTS
+  PROGRAM_LOGS
+  NFTS
+}
+
+enum Frequency {
+  REAL_TIME
+  HOURLY
+  DAILY
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum IndexCategory {
+  TRANSACTIONS
+  TOKEN_TRANSFERS
+  NFT_MINTS
+  NFT_SALES
+  STAKING_ACCOUNTS
+  SMART_CONTRACTS
+  PROGRAM_EXECUTIONS
+  DEFI_SWAPS
+  LIQUIDITY_POOLS
+  ORACLE_UPDATES
+  GOVERNANCE_VOTES
+  DOMAIN_REGISTRATIONS
+}
+
+enum Cluster {
+  MAINNET
+  DEVNET
+}
+
 model User {
   id            String          @id @default(uuid())
   name          String?
@@ -22,6 +62,7 @@ model User {
   databases     Database[]
   indexRequests IndexRequest[]
   categories    IndexCategory[]
+  indexingTasks IndexingTask[]
 }
 
 model Account {
@@ -53,32 +94,39 @@ model Database {
   IndexedData  IndexedData[]
 }
 
-model IndexCategory {
-  id            String         @id @default(uuid())
-  name          String         @unique
-  userId        String
-  user          User           @relation(fields: [userId], references: [id])
-  indexRequests IndexRequest[]
-  IndexedData   IndexedData[]
-}
-
 model IndexRequest {
-  id         String        @id @default(uuid())
-  categoryId String
-  category   IndexCategory @relation(fields: [categoryId], references: [id])
-  userId     String
-  user       User          @relation(fields: [userId], references: [id])
-  databaseId String
-  database   Database      @relation(fields: [databaseId], references: [id])
-  createdAt  DateTime      @default(now())
+  id            String         @id @default(uuid())
+  category      IndexCategory
+  userId        String
+  cluster       Cluster
+  user          User           @relation(fields: [userId], references: [id])
+  databaseId    String
+  database      Database       @relation(fields: [databaseId], references: [id])
+  indexType     IndexType
+  targetAddr    String
+  filters       String         @default("")
+  frequency     Frequency
+  createdAt     DateTime       @default(now())
+  indexingTasks IndexingTask[]
 }
 
 model IndexedData {
   id         String        @id @default(uuid())
-  categoryId String
-  category   IndexCategory @relation(fields: [categoryId], references: [id])
+  category   IndexCategory
   data       String
   receivedAt DateTime      @default(now())
   databaseId String
   database   Database      @relation(fields: [databaseId], references: [id])
+}
+
+model IndexingTask {
+  id             String       @id @default(uuid())
+  indexRequestId String
+  indexRequest   IndexRequest @relation(fields: [indexRequestId], references: [id])
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  status         TaskStatus   @default(PENDING)
+  startedAt      DateTime?
+  completedAt    DateTime?
+  errorMessage   String?
 }

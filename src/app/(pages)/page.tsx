@@ -1,10 +1,11 @@
 "use client";
 
+import IndexRequestForm from "@/components/forms/IndexRequestForm";
 import StoreDatabaseForm from "@/components/forms/StoreDatabaseForm";
 import LandingPage from "@/components/landing/Landing";
-import { useUserContext } from "@/components/SessionProvder";
+import { User, useUserContext } from "@/components/SessionProvder";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { montserrat } from "@/fonts/fonts";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -15,28 +16,28 @@ const steps = [
   {
     title: "Connect Database",
     description: "Connect your database to SolixDB for indexing.",
-    action: "Connect",
+    action: "CONNECT",
     link: "/dashboard",
     icon: <Database className="w-5 h-5" />,
   },
   {
     title: "Configure Parameters",
     description: "Specify tables, columns, and indexing criteria.",
-    action: "Configure",
+    action: "CONFIGURE",
     link: "/index-settings",
     icon: <Settings className="w-5 h-5" />,
   },
   {
     title: "Start Indexing",
     description: "Begin indexing your blockchain data.",
-    action: "Start",
+    action: "START",
     link: "/indexing-progress",
     icon: <ArrowRight className="w-5 h-5" />,
   },
   {
     title: "Explore Data",
     description: "Query and analyze your indexed blockchain data.",
-    action: "Explore",
+    action: "EXPLORE",
     link: "/explorer",
     icon: <Search className="w-5 h-5" />,
   },
@@ -83,9 +84,11 @@ export default function HomePage() {
   const user = useUserContext();
 
   useEffect(() => {
-    if (user?.databases && user.databases.length > 0) {
-      console.log("User has databases:", user.databases);
-      setCompletedSteps([0]);
+    if (user) {
+      setStoreUser(user);
+      if (user.databases && user.databases.length > 0) {
+        setCompletedSteps([0]);
+      }
     }
   }, [user]);
 
@@ -96,14 +99,17 @@ export default function HomePage() {
   }
 
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const [showStoreDatabaseForm, setShowStoreDatabaseForm] = useState(false);
+  const [dialogContent, setDialogContent] = useState<"STORE" | "INDEX" | null>(null);
+  const [storeUser, setStoreUser] = useState<User | null>(null);
 
   const handleStepComplete = (action: string) => {
     switch (action) {
-      case "Connect":
-        setShowStoreDatabaseForm(true);
+      case "CONNECT":
+        setDialogContent("STORE");
         break;
-
+      case "CONFIGURE":
+        setDialogContent("INDEX");
+        break;
       default:
         break;
     }
@@ -115,7 +121,7 @@ export default function HomePage() {
   };
 
   return (
-    <Dialog open={showStoreDatabaseForm} onOpenChange={setShowStoreDatabaseForm}>
+    <Dialog open={dialogContent !== null} onOpenChange={() => setDialogContent(null)}>
       <div className={cn("py-8 px-4 md:px-6 bg-background min-h-[calc(100vh-8.1rem)]", montserrat)}>
         <motion.div
           className="max-w-2xl mx-auto"
@@ -218,12 +224,25 @@ export default function HomePage() {
             </motion.div>
           )}
         </motion.div>
+      </div>
 
-        <StoreDatabaseForm
-          setShowStoreDatabaseForm={setShowStoreDatabaseForm}
-          setCompletedSteps={setCompletedSteps}
-        />
-      </div >
+      <DialogContent>
+        {dialogContent === "STORE" && (
+          <StoreDatabaseForm
+            setShowStoreDatabaseForm={() => setDialogContent(null)}
+            setCompletedSteps={setCompletedSteps}
+            setUser={setStoreUser}
+          />
+        )}
+        {dialogContent === "INDEX" && (
+          <IndexRequestForm
+            setShowIndexRequestForm={() => setDialogContent(null)}
+            setCompletedSteps={setCompletedSteps}
+            setUser={setStoreUser}
+            databases={storeUser?.databases || []}
+          />
+        )}
+      </DialogContent>
     </Dialog>
   );
 }
