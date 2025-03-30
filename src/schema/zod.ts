@@ -11,10 +11,8 @@ export const databaseFormSchema = z.object({
 
 export const indexRequestSchema = z.object({
   databaseId: z.string().min(1, "Database selection is required"),
-  categoryId: z.enum(["TRANSACTIONS", "TOKEN_TRANSFERS", "NFT_MINTS", "NFT_SALES", "STAKING_ACCOUNTS", "SMART_CONTRACTS", "PROGRAM_EXECUTIONS", "DEFI_SWAPS", "LIQUIDITY_POOLS", "ORACLE_UPDATES", "GOVERNANCE_VOTES", "DOMAIN_REGISTRATIONS"]),
+  categoryId: z.enum(["TRANSFER", "DEPOSIT", "WITHDRAW", "NFT_SALE", "NFT_MINT", "SWAP", "TOKEN_MINT", "LOAN", "STAKE_TOKEN", "BURN"]),
   indexType: z.enum(["TRANSACTIONS", "TOKEN_ACCOUNTS", "PROGRAM_LOGS", "NFTS"]),
   targetAddr: z.string().min(1, "Target address is required"),
-  filters: z.string().optional(),
   frequency: z.enum(["REAL_TIME", "HOURLY", "DAILY"]),
-  cluster: z.enum(["MAINNET", "DEVNET"]),
 });

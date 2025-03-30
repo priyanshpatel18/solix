@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle, Database, Search, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const steps = [
   {
@@ -89,6 +90,9 @@ export default function HomePage() {
       if (user.databases && user.databases.length > 0) {
         setCompletedSteps([0]);
       }
+      if (user.indexRequests && user.indexRequests.length > 0) {
+        setCompletedSteps([0, 1]);
+      }
     }
   }, [user]);
 
@@ -101,8 +105,46 @@ export default function HomePage() {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [dialogContent, setDialogContent] = useState<"STORE" | "INDEX" | null>(null);
   const [storeUser, setStoreUser] = useState<User | null>(null);
+  const [databaseId, setDatabaseId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleStepComplete = (action: string) => {
+  useEffect(() => {
+    if (storeUser && storeUser.databases.length > 0 && storeUser.indexRequests.length > 0) {
+      setDatabaseId(storeUser.databases[0].id);
+    }
+  }, [storeUser]);
+
+  async function startIndexing() {
+    try {
+      if (!databaseId) {
+        return toast.error("Please select a database.");
+      }
+
+      setIsLoading(true);
+      const response = await fetch("/api/indexing/start", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ databaseId }),
+      });
+
+      const { success } = await response.json();
+
+      if (!success) {
+        return toast.error("Failed to start indexing.");
+      }
+
+      toast.success("Indexing started successfully!");
+      setCompletedSteps((prev) => [...prev, 2]);
+    } catch (error) {
+      console.error("❌ Error starting indexing:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const handleStepComplete = async (action: string) => {
     switch (action) {
       case "CONNECT":
         setDialogContent("STORE");
@@ -110,6 +152,10 @@ export default function HomePage() {
       case "CONFIGURE":
         setDialogContent("INDEX");
         break;
+      case "START":
+        await startIndexing();
+        break;
+
       default:
         break;
     }
@@ -180,7 +226,7 @@ export default function HomePage() {
                       <Button
                         size="sm"
                         variant={completedSteps.includes(index) ? "outline" : "default"}
-                        disabled={isStepDisabled(index)}
+                        disabled={isStepDisabled(index) || isLoading}
                         onClick={() => {
                           if (completedSteps.includes(index)) {
                             return;
@@ -240,6 +286,7 @@ export default function HomePage() {
             setCompletedSteps={setCompletedSteps}
             setUser={setStoreUser}
             databases={storeUser?.databases || []}
+            setDatabaseId={setDatabaseId}
           />
         )}
       </DialogContent>

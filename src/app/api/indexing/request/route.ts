@@ -1,8 +1,8 @@
 import prisma from '@/db';
 import { auth } from '@/lib/auth';
 import { indexRequestSchema } from '@/schema/zod';
+import { IndexCategory } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
-import { Cluster, IndexCategory } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
 
-    const { targetAddr, indexType, cluster, databaseId, categoryId, frequency } = parsedData;
+    const { targetAddr, indexType, databaseId, categoryId, frequency } = parsedData;
 
     const session = await auth();
     if (!session || !session.user.email) {
@@ -25,10 +25,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    if (!Object.values(Cluster).includes(cluster)) {
-      return NextResponse.json({ error: 'Invalid cluster type' }, { status: 400 });
-    }
-
+    console.log(categoryId);
+    
     // Validate category enum
     if (!Object.values(IndexCategory).includes(categoryId)) {
       return NextResponse.json({ error: 'Invalid category type' }, { status: 400 });
@@ -42,7 +40,6 @@ export async function POST(req: NextRequest) {
         databaseId,
         category: categoryId,
         frequency,
-        cluster,
       },
     });
 

@@ -33,23 +33,16 @@ enum TaskStatus {
 }
 
 enum IndexCategory {
-  TRANSACTIONS
-  TOKEN_TRANSFERS
-  NFT_MINTS
-  NFT_SALES
-  STAKING_ACCOUNTS
-  SMART_CONTRACTS
-  PROGRAM_EXECUTIONS
-  DEFI_SWAPS
-  LIQUIDITY_POOLS
-  ORACLE_UPDATES
-  GOVERNANCE_VOTES
-  DOMAIN_REGISTRATIONS
-}
-
-enum Cluster {
-  MAINNET
-  DEVNET
+  TRANSFER
+  DEPOSIT
+  WITHDRAW
+  NFT_SALE
+  NFT_MINT
+  SWAP
+  TOKEN_MINT
+  LOAN
+  STAKE_TOKEN
+  BURN
 }
 
 model User {
@@ -98,13 +91,12 @@ model IndexRequest {
   id            String         @id @default(uuid())
   category      IndexCategory
   userId        String
-  cluster       Cluster
   user          User           @relation(fields: [userId], references: [id])
   databaseId    String
   database      Database       @relation(fields: [databaseId], references: [id])
   indexType     IndexType
   targetAddr    String
-  filters       String         @default("")
+  webhookSecret String         @default("")
   frequency     Frequency
   createdAt     DateTime       @default(now())
   indexingTasks IndexingTask[]
