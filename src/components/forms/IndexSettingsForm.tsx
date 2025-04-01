@@ -8,25 +8,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { montserrat } from "@/fonts/fonts";
 import { indexRequestSchema } from "@/schema/zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Frequency, IndexCategory, IndexType } from "@prisma/client";
+import { IndexParams, IndexType } from "@prisma/client";
 import { motion } from "framer-motion";
 import { Dispatch, SetStateAction, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { User } from "../SessionProvder";
+import { User } from "../UserContext";
 
 const solanaIndexCategories = [
-  { id: "TRANSFER" as IndexCategory, name: "Transfer" },
-  { id: "DEPOSIT" as IndexCategory, name: "Deposit" },
-  { id: "WITHDRAW" as IndexCategory, name: "Withdraw" },
-  { id: "NFT_SALE" as IndexCategory, name: "NFT Sale" },
-  { id: "NFT_MINT" as IndexCategory, name: "NFT Mint" },
-  { id: "SWAP" as IndexCategory, name: "Swap" },
-  { id: "TOKEN_MINT" as IndexCategory, name: "Token Mint" },
-  { id: "LOAN" as IndexCategory, name: "Loan" },
-  { id: "STAKE_TOKEN" as IndexCategory, name: "Stake Token" },
-  { id: "BURN" as IndexCategory, name: "Burn" },
+  { id: "TRANSFER" as IndexParams, name: "Transfer" },
+  { id: "DEPOSIT" as IndexParams, name: "Deposit" },
+  { id: "WITHDRAW" as IndexParams, name: "Withdraw" },
+  { id: "NFT_SALE" as IndexParams, name: "NFT Sale" },
+  { id: "NFT_MINT" as IndexParams, name: "NFT Mint" },
+  { id: "SWAP" as IndexParams, name: "Swap" },
+  { id: "TOKEN_MINT" as IndexParams, name: "Token Mint" },
+  { id: "LOAN" as IndexParams, name: "Loan" },
+  { id: "STAKE_TOKEN" as IndexParams, name: "Stake Token" },
+  { id: "BURN" as IndexParams, name: "Burn" },
 ];
 
 const indexTypes = [
@@ -34,12 +34,6 @@ const indexTypes = [
   { id: "TOKEN_ACCOUNTS" as IndexType, name: "Token Accounts" },
   { id: "PROGRAM_LOGS" as IndexType, name: "Program Logs" },
   { id: "NFTS" as IndexType, name: "NFTs" },
-];
-
-const frequencies = [
-  { id: "REAL_TIME" as Frequency, name: "Real Time" },
-  { id: "HOURLY" as Frequency, name: "Hourly" },
-  { id: "DAILY" as Frequency, name: "Daily" },
 ];
 
 type IndexRequestValues = z.infer<typeof indexRequestSchema>;
@@ -62,7 +56,7 @@ export default function IndexRequestForm({ setShowIndexRequestForm, setCompleted
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/indexing/request", {
+      const response = await fetch("/api/indexing/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -74,12 +68,12 @@ export default function IndexRequestForm({ setShowIndexRequestForm, setCompleted
         setShowIndexRequestForm(false);
         setDatabaseId(data.databaseId);
 
-        const { indexRequest } = await response.json();
+        const { indexSettings } = await response.json();
         setUser((prevUser) => {
           if (!prevUser) return prevUser;
           return {
             ...prevUser,
-            indexRequests: [...prevUser.indexRequests, indexRequest],
+            indexSettings: [...prevUser.indexSettings, indexSettings],
           };
         });
       } else {
@@ -117,7 +111,7 @@ export default function IndexRequestForm({ setShowIndexRequestForm, setCompleted
 
         <div className="flex flex-col gap-2">
           <Label>Category</Label>
-          <Select onValueChange={(value) => setValue("categoryId", value as IndexCategory)}>
+          <Select onValueChange={(value) => setValue("categoryId", value as IndexParams)}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Choose a category" />
             </SelectTrigger>
@@ -146,20 +140,6 @@ export default function IndexRequestForm({ setShowIndexRequestForm, setCompleted
         <div className="flex flex-col gap-2">
           <Label>Target Address</Label>
           <Input {...register("targetAddr")} placeholder="Enter target address" className="w-full" />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Label>Frequency</Label>
-          <Select onValueChange={(value) => setValue("frequency", value as Frequency)}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choose frequency" />
-            </SelectTrigger>
-            <SelectContent>
-              {frequencies.map((freq) => (
-                <SelectItem key={freq.id} value={freq.id}>{freq.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="col-span-1 md:col-span-2">

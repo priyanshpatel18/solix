@@ -1,8 +1,8 @@
-import prisma from '@/db';
+import prisma from '@/db/prisma';
 import { auth } from '@/lib/auth';
 import { encrypt } from '@/lib/encrypt';
 import { databaseFormSchema } from '@/schema/zod';
-import { hash } from 'argon2';
+import { PrismaClient } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -28,10 +28,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Encrypt the password
-    const encryptedPassword = await encrypt(password);
-    console.log(encryptedPassword);
+    // Test database connection 
+    const connectionUrl = `postgresql://${username}:${password}@${host}:${port}/${dbName}`;
+    const testPrisma = new PrismaClient({
+      datasources: {
+        db: { url: connectionUrl },
+      },
+    });
 
+    try {
+      await testPrisma.$connect();
+    } catch (error) {
+      console.error("Database connection failed:", error);
+      return NextResponse.json({ error: 'Database connection failed. Check your credentials.' }, { status: 400 });
+    } finally {
+      await testPrisma.$disconnect();
+    }
+
+    // Encrypt the password
+    const encryptedPassword = encrypt(password);
 
     // Store the database entry
     const dbEntry = await prisma.database.create({

@@ -1,6 +1,6 @@
 import Providers from "@/components/Providers";
 import { Toaster } from "@/components/ui/sonner";
-import { siteConfig } from "@/conifg/siteConfig";
+import { siteConfig } from "@/config/siteConfig";
 import { Inter } from "next/font/google";
 import "./globals.css";
 

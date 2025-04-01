@@ -11,7 +11,7 @@ import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { User } from "../SessionProvder";
+import { User } from "../UserContext";
 
 type DatabaseFormValues = z.infer<typeof databaseFormSchema>;
 

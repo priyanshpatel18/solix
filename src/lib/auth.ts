@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Github from "next-auth/providers/github";
-import prisma from "@/db";
+import prisma from "@/db/prisma";
 import { toast } from "sonner";
 import { NextResponse } from "next/server";
 

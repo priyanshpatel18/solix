@@ -1,88 +1,126 @@
-import prisma from "@/db";
+import prisma from "@/db/prisma";
 import { auth } from "@/lib/auth";
+import { cacheData } from "@/lib/cacheData";
+import { IndexParams, IndexSettings } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 
 const HELIUS_MAINNET_API = "https://api.helius.xyz/v0/webhooks";
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
-const WEBHOOK_URL = process.env.NEXT_PUBLIC_WEBHOOK_URL;
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+const WEBHOOK_ID = process.env.WEBHOOK_ID;
 
 export async function POST(request: NextRequest) {
   try {
-    if (!HELIUS_API_KEY || !WEBHOOK_URL) {
-      return NextResponse.json(
-        { error: "Server misconfiguration: Missing Helius API Key or Webhook URL" },
-        { status: 500 }
-      );
-    }
+    // Check for missing environment variables
+    validateEnvVars();
 
     const { databaseId } = await request.json();
-    const session = await auth();
-
-    if (!session || !session.user.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!databaseId) {
+      return NextResponse.json({ error: "Missing database ID" }, { status: 400 });
     }
 
-    const user = await prisma.user.findFirst({
-      where: { email: session.user.email },
-      include: { databases: true, indexRequests: true }
-    });
-
+    // Authenticate user
+    const user = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    const database = user.databases.find((db) => db.id === databaseId);
-    if (!database) return NextResponse.json({ error: "Database not found" }, { status: 404 });
+    // Check for IndexSettings
+    const indexSettings = getIndexSettings(user, databaseId);
+    if (!indexSettings) return NextResponse.json({ error: "Index request not found" }, { status: 404 });
 
-    const indexRequest = user.indexRequests.find((req) => req.databaseId === databaseId);
-    if (!indexRequest) return NextResponse.json({ error: "Index request not found" }, { status: 404 });
+    // Check for WebhookParams
+    const webhookParams = await prisma.params.findFirst();
+    if (!webhookParams) return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 
-    // Convert IndexCategory to a valid type
-    const transactionTypes = mapCategoryToHelius(indexRequest.category);
-    if (!transactionTypes.length) {
-      return NextResponse.json(
-        { error: `Unsupported index category: ${indexRequest.category}` },
-        { status: 400 }
-      );
-    }
+    // Register webhook
+    const usedApi = await updateHeliusWebhook(indexSettings, webhookParams);
 
-    const webhookSecret = crypto.randomBytes(32).toString("hex");
-    await prisma.indexRequest.update({
-      where: { id: indexRequest.id },
-      data: { webhookSecret: webhookSecret },
-    });
+    // Start settings in redis
+    await cacheData(
+      user,
+      indexSettings.database,
+      indexSettings.targetAddr,
+      indexSettings.indexType,
+      indexSettings.indexParams
+    );
 
-    // Register webhook with Helius
-    const webhookResponse = await fetch(`${HELIUS_MAINNET_API}?api-key=${HELIUS_API_KEY}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        webhookURL: WEBHOOK_URL,
-        transactionTypes,
-        accountAddresses: [indexRequest.targetAddr],
-        webhookType: "raw",
-        txnStatus: "all",
-        authHeader: webhookSecret
-      }),
-    });
+    // Update IndexSettings
+    await updateDatabaseRecords(user.id, indexSettings.id, usedApi);
 
-    const webhookData = await webhookResponse.json();
-    if (!webhookResponse.ok) {
-      console.error("Helius Webhook Error:", webhookData);
-      console.log(webhookResponse);
-      return NextResponse.json({ error: webhookData.message || "Webhook registration failed" }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true, data: webhookData }, { status: 200 });
+    return NextResponse.json({ message: "Indexing started" }, { status: 200 });
   } catch (error) {
     console.error("Error registering webhook:", error);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
 
-function mapCategoryToHelius(category: string): string[] {
-  const categoryMap: Record<string, string[]> = {
+function validateEnvVars() {
+  if (!HELIUS_API_KEY || !WEBHOOK_SECRET || !WEBHOOK_ID) {
+    throw new Error("Server misconfiguration");
+  }
+}
+
+async function getAuthenticatedUser() {
+  const session = await auth();
+  if (!session || !session.user.email) return null;
+  return prisma.user.findFirst({
+    where: { email: session.user.email },
+    include: { indexSettings: { include: { database: { include: { user: true } } } } },
+  });
+}
+
+function getIndexSettings(user: any, databaseId: string) {
+  return user.indexSettings.find((req: IndexSettings) => req.databaseId === databaseId);
+}
+
+async function updateHeliusWebhook(indexSettings: any, webhookParams: any) {
+  const params = indexSettings.indexParams.map(mapParamsToHelius).flat();
+  const missingParams = params.filter((param: IndexParams) => !webhookParams.transactionTypes.includes(param));
+  let usedApi = false;
+
+  if (missingParams.length > 0 || !webhookParams.accountAddresses.includes(indexSettings.targetAddr)) {
+    usedApi = true;
+    const webhookBody = {
+      accountAddresses: [...new Set([...webhookParams.accountAddresses, indexSettings.targetAddr])],
+      transactionTypes: [...new Set([...webhookParams.transactionTypes, ...missingParams])],
+      authHeader: WEBHOOK_SECRET,
+    };
+
+    const response = await fetch(`${HELIUS_MAINNET_API}/${WEBHOOK_ID}?api-key=${HELIUS_API_KEY}`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `${WEBHOOK_SECRET}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(webhookBody),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Helius API error: ${errorText}`);
+    }
+  }
+
+  return usedApi;
+}
+
+async function updateDatabaseRecords(userId: string, indexSettingsId: string, usedApi: boolean) {
+  await prisma.$transaction(async (tx) => {
+    if (usedApi) {
+      await tx.user.update({
+        where: { id: userId },
+        data: { credits: { decrement: 100 } }
+      });
+    }
+
+    await tx.indexSettings.update({
+      where: { id: indexSettingsId },
+      data: { status: "IN_PROGRESS" },
+    });
+  });
+}
+
+function mapParamsToHelius(category: string): IndexParams[] {
+  const paramsMap: Record<string, IndexParams[]> = {
     TRANSFER: ["TRANSFER"],
     DEPOSIT: ["DEPOSIT"],
     WITHDRAW: ["WITHDRAW"],
@@ -95,5 +133,5 @@ function mapCategoryToHelius(category: string): string[] {
     BURN: ["BURN"],
   };
 
-  return categoryMap[category] || [];
+  return paramsMap[category] ?? [];
 }

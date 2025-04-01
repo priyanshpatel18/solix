@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, IndexRequest } from "@prisma/client";
+import { Database, IndexSettings } from "@prisma/client";
 import { createContext, useContext } from "react";
 
 const UserContext = createContext<User | null>(null);
@@ -11,7 +11,7 @@ export interface User {
   name: string | null;
   image: string | null;
   databases: Database[];
-  indexRequests: IndexRequest[];
+  indexSettings: IndexSettings[];
 }
 
 export function UserProvider({ user, children }: { user: User | null; children: React.ReactNode }) {
