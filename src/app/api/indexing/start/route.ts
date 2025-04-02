@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const HELIUS_API_URL = "https://api.helius.xyz/v0/webhooks";
 const HELIUS_MAINNET_API_KEY = process.env.HELIUS_MAINNET_API_KEY;
-const WEBHOOK_DEVNET_API_KEY = process.env.WEBHOOK_DEVNET_API_KEY;
+const HELIUS_DEVNET_API_KEY = process.env.HELIUS_DEVNET_API_KEY;
 const WEBHOOK_DEVNET_SECRET = process.env.WEBHOOK_DEVNET_SECRET;
 const WEBHOOK_MAINNET_SECRET = process.env.WEBHOOK_MAINNET_SECRET;
 const MAINNET_WEBHOOK_ID = process.env.MAINNET_WEBHOOK_ID;
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 }
 
 function validateEnvVars() {
-  if (!HELIUS_MAINNET_API_KEY || !WEBHOOK_DEVNET_API_KEY || !WEBHOOK_DEVNET_SECRET || !WEBHOOK_MAINNET_SECRET || !MAINNET_WEBHOOK_ID || !DEVNET_WEBHOOK_ID) {
+  if (!HELIUS_MAINNET_API_KEY || !HELIUS_DEVNET_API_KEY || !WEBHOOK_DEVNET_SECRET || !WEBHOOK_MAINNET_SECRET || !MAINNET_WEBHOOK_ID || !DEVNET_WEBHOOK_ID) {
     throw new Error("Server misconfiguration");
   }
 }
@@ -82,7 +82,7 @@ async function updateHeliusWebhook(indexSettings: IndexSettings, webhookParams: 
   let usedApi = false;
   const WEBHOOK_SECRET = indexSettings.cluster === "DEVNET" ? WEBHOOK_DEVNET_SECRET : WEBHOOK_MAINNET_SECRET;
   const WEBHOOK_ID = indexSettings.cluster === "DEVNET" ? DEVNET_WEBHOOK_ID : MAINNET_WEBHOOK_ID;
-  const HELIUS_API_KEY = indexSettings.cluster === "DEVNET" ? WEBHOOK_DEVNET_API_KEY : HELIUS_MAINNET_API_KEY;
+  const HELIUS_API_KEY = indexSettings.cluster === "DEVNET" ? HELIUS_DEVNET_API_KEY : HELIUS_MAINNET_API_KEY;
 
   if (missingParams.length > 0 || !webhookParams.accountAddresses.includes(indexSettings.targetAddr)) {
     usedApi = true;
