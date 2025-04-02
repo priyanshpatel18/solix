@@ -1,13 +1,15 @@
 import pushToQueue from "@/lib/pushToQueue";
 import { NextRequest, NextResponse } from "next/server";
 
+const WEBHOOK_DEVNET_SECRET = process.env.WEBHOOK_DEVNET_SECRET;
+const WEBHOOK_MAINNET_SECRET = process.env.WEBHOOK_MAINNET_SECRET;
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const receivedSecret = request.headers.get("authorization");
-    const storedSecret = process.env.WEBHOOK_SECRET;
 
-    if (!receivedSecret || receivedSecret !== storedSecret) {
+    if (!receivedSecret || (receivedSecret !== WEBHOOK_DEVNET_SECRET && receivedSecret !== WEBHOOK_MAINNET_SECRET)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

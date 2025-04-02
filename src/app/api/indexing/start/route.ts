@@ -1,13 +1,16 @@
 import prisma from "@/db/prisma";
 import { auth } from "@/lib/auth";
 import { cacheData } from "@/lib/cacheData";
-import { IndexParams, IndexSettings } from "@prisma/client";
+import { IndexParams, IndexSettings, Params } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
-const HELIUS_MAINNET_API = "https://api.helius.xyz/v0/webhooks";
-const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
-const WEBHOOK_ID = process.env.WEBHOOK_ID;
+const HELIUS_API_URL = "https://api.helius.xyz/v0/webhooks";
+const HELIUS_MAINNET_API_KEY = process.env.HELIUS_MAINNET_API_KEY;
+const WEBHOOK_DEVNET_API_KEY = process.env.WEBHOOK_DEVNET_API_KEY;
+const WEBHOOK_DEVNET_SECRET = process.env.WEBHOOK_DEVNET_SECRET;
+const WEBHOOK_MAINNET_SECRET = process.env.WEBHOOK_MAINNET_SECRET;
+const MAINNET_WEBHOOK_ID = process.env.MAINNET_WEBHOOK_ID;
+const DEVNET_WEBHOOK_ID = process.env.DEVNET_WEBHOOK_ID;
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +43,8 @@ export async function POST(request: NextRequest) {
       indexSettings.database,
       indexSettings.targetAddr,
       indexSettings.indexType,
-      indexSettings.indexParams
+      indexSettings.indexParams,
+      indexSettings.cluster
     );
 
     // Update IndexSettings
@@ -54,7 +58,7 @@ export async function POST(request: NextRequest) {
 }
 
 function validateEnvVars() {
-  if (!HELIUS_API_KEY || !WEBHOOK_SECRET || !WEBHOOK_ID) {
+  if (!HELIUS_MAINNET_API_KEY || !WEBHOOK_DEVNET_API_KEY || !WEBHOOK_DEVNET_SECRET || !WEBHOOK_MAINNET_SECRET || !MAINNET_WEBHOOK_ID || !DEVNET_WEBHOOK_ID) {
     throw new Error("Server misconfiguration");
   }
 }
@@ -72,10 +76,13 @@ function getIndexSettings(user: any, databaseId: string) {
   return user.indexSettings.find((req: IndexSettings) => req.databaseId === databaseId);
 }
 
-async function updateHeliusWebhook(indexSettings: any, webhookParams: any) {
+async function updateHeliusWebhook(indexSettings: IndexSettings, webhookParams: Params) {
   const params = indexSettings.indexParams.map(mapParamsToHelius).flat();
   const missingParams = params.filter((param: IndexParams) => !webhookParams.transactionTypes.includes(param));
   let usedApi = false;
+  const WEBHOOK_SECRET = indexSettings.cluster === "DEVNET" ? WEBHOOK_DEVNET_SECRET : WEBHOOK_MAINNET_SECRET;
+  const WEBHOOK_ID = indexSettings.cluster === "DEVNET" ? DEVNET_WEBHOOK_ID : MAINNET_WEBHOOK_ID;
+  const HELIUS_API_KEY = indexSettings.cluster === "DEVNET" ? WEBHOOK_DEVNET_API_KEY : HELIUS_MAINNET_API_KEY;
 
   if (missingParams.length > 0 || !webhookParams.accountAddresses.includes(indexSettings.targetAddr)) {
     usedApi = true;
@@ -85,7 +92,7 @@ async function updateHeliusWebhook(indexSettings: any, webhookParams: any) {
       authHeader: WEBHOOK_SECRET,
     };
 
-    const response = await fetch(`${HELIUS_MAINNET_API}/${WEBHOOK_ID}?api-key=${HELIUS_API_KEY}`, {
+    const response = await fetch(`${HELIUS_API_URL}/${WEBHOOK_ID}?api-key=${HELIUS_API_KEY}`, {
       method: "PUT",
       headers: {
         "Authorization": `${WEBHOOK_SECRET}`,

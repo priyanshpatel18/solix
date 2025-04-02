@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
 
-    const { targetAddr, indexType, databaseId, categoryId } = parsedData;
+    const { targetAddr, indexType, databaseId, categoryId, cluster } = parsedData;
 
     const session = await auth();
     if (!session || !session.user.email) {
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
         databaseId,
         indexParams: [categoryId],
         status: "PENDING",
+        cluster,
       },
     });
 

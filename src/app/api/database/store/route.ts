@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(dbEntry, { status: 201 });
+    return NextResponse.json({ database: dbEntry }, { status: 201 });
   } catch (error) {
     console.error(error instanceof Error ? error.message : error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });

@@ -42,19 +42,20 @@ export default function StoreDatabaseForm({ setShowStoreDatabaseForm, setComplet
       });
 
       if (response.ok) {
-        toast.success("Database connection saved!");
-        const { dbEntry } = await response.json();
+        const { database } = await response.json();
+        console.log(database);
 
         setUser((prevUser) => {
           if (prevUser) {
             return {
               ...prevUser,
-              databases: [...prevUser.databases, dbEntry],
+              databases: [...prevUser.databases, database],
             };
           }
           return prevUser;
         });
 
+        toast.success("Database connection saved!");
         setCompletedSteps((prev) => [...prev, 0]);
       } else {
         const errorData = await response.json();
