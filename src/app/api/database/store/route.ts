@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Test database connection 
-    const connectionUrl = `postgresql://${username}:${password}@${host}:${port}/${dbName}`;
+    const connectionUrl = `postgresql://${username}:${password}@${host}:${port}/${dbName}?sslmode=require`;
     const testPrisma = new PrismaClient({
       datasources: {
         db: { url: connectionUrl },

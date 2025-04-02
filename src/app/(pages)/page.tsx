@@ -92,6 +92,9 @@ export default function HomePage() {
       }
       if (user.indexSettings && user.indexSettings.length > 0) {
         setCompletedSteps([0, 1]);
+        if (user.indexSettings[0].status === "IN_PROGRESS") {
+          setCompletedSteps([0, 1, 2]);
+        }
       }
     }
   }, [user]);
@@ -129,9 +132,7 @@ export default function HomePage() {
         body: JSON.stringify({ databaseId }),
       });
 
-      const { success } = await response.json();
-
-      if (!success) {
+      if (!response.ok) {
         return toast.error("Failed to start indexing.");
       }
 
