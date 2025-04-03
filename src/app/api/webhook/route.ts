@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const receivedSecret = request.headers.get("authorization");
 
-    if (!receivedSecret || (receivedSecret !== WEBHOOK_DEVNET_SECRET && receivedSecret !== WEBHOOK_MAINNET_SECRET)) {
+    if (!receivedSecret || (receivedSecret !== `Bearer ${WEBHOOK_DEVNET_SECRET}` && receivedSecret !== `Bearer ${WEBHOOK_MAINNET_SECRET}`)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
