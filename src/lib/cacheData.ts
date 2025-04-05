@@ -1,4 +1,4 @@
-import { Cluster, Database, IndexParams, IndexType, Plan, User } from "@prisma/client";
+import { Cluster, Database, IndexParams, IndexType, Plan } from "@prisma/client";
 import { redis } from "../db/redis";
 
 export interface CachedSettings {
@@ -7,9 +7,10 @@ export interface CachedSettings {
   indexType: IndexType;
   indexParams: IndexParams[];
   cluster: Cluster;
+  userId: string;
 }
 
-interface CachedUser {
+export interface CachedUser {
   id: string;
   email: string;
   credits: number;
@@ -45,7 +46,7 @@ export async function cacheData(
   // Check if settings are already cached
   const settingsExists = await redis.exists(settingsKey);
   if (!settingsExists) {
-    const settings: CachedSettings = { databaseId: database.id, targetAddr, indexType, indexParams, cluster };
+    const settings: CachedSettings = { databaseId: database.id, targetAddr, indexType, indexParams, cluster, userId: user.id };
     await redis.set(settingsKey, JSON.stringify(settings));
   }
 }
@@ -65,7 +66,7 @@ export async function getCachedData() {
   // Parse only non-null values
   const databases: Database[] = dbValues.filter(Boolean).map((db) => JSON.parse(db as string));
   const settings: CachedSettings[] = settingsValues.filter(Boolean).map((s) => JSON.parse(s as string));
-  const users: User[] = userValues.filter(Boolean).map((u) => JSON.parse(u as string));
+  const users: CachedUser[] = userValues.filter(Boolean).map((u) => JSON.parse(u as string));
 
   return { databases, settings, users };
 }
