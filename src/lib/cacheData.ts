@@ -1,5 +1,5 @@
-import { redis } from "@/db/redis";
-import { Cluster, Database, IndexParams, IndexType, User } from "@prisma/client";
+import { Cluster, Database, IndexParams, IndexType, Plan, User } from "@prisma/client";
+import { redis } from "../db/redis";
 
 export interface CachedSettings {
   databaseId: string;
@@ -9,8 +9,17 @@ export interface CachedSettings {
   cluster: Cluster;
 }
 
+interface CachedUser {
+  id: string;
+  email: string;
+  credits: number;
+  plan: Plan;
+  createdAt: Date;
+  databases: Database[];
+}
+
 export async function cacheData(
-  user: User,
+  user: CachedUser,
   database: Database,
   targetAddr: string,
   indexType: IndexType,

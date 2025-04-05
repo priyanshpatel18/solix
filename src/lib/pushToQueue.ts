@@ -1,17 +1,12 @@
-import Bull from "bull";
+import { redis } from "@/db/redis";
+import { Queue } from "bullmq";
 
-const REDIS_URL = process.env.REDIS_URL;
-const REDIS_TOKEN = process.env.REDIS_TOKEN;
 const REDIS_QUEUE_NAME = process.env.REDIS_QUEUE_NAME || "webhookQueue";
 
-const webhookQueue = new Bull(REDIS_QUEUE_NAME, {
-  redis: {
-    host: REDIS_URL,
-    password: REDIS_TOKEN,
-    tls: {},
-  },
+const webhookQueue = new Queue(REDIS_QUEUE_NAME, {
+  connection: redis
 });
 
-export default async function pushToQueue(data: any) {
-  await webhookQueue.add(data);
+export async function pushToQueue(data: any) {
+  await webhookQueue.add("webhook-job", data);
 }

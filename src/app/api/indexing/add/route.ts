@@ -42,35 +42,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const webhookParams = await prisma.params.findFirst();
-    if (!webhookParams) {
-      await prisma.params.create({
-        data: {
-          accountAddresses: [targetAddr],
-          transactionTypes: [categoryId],
-        },
-      });
-    } else {
-      // Check and add the targetAddr
-      const updatedAccountAddresses = webhookParams.accountAddresses.includes(targetAddr)
-        ? webhookParams.accountAddresses
-        : [...webhookParams.accountAddresses, targetAddr];
-
-      // Check and add the categoryId
-      const updatedTransactionTypes = webhookParams.transactionTypes.includes(categoryId)
-        ? webhookParams.transactionTypes
-        : [...webhookParams.transactionTypes, categoryId];
-
-      // Update the params with new values
-      await prisma.params.update({
-        where: { id: webhookParams.id },
-        data: {
-          accountAddresses: updatedAccountAddresses,
-          transactionTypes: updatedTransactionTypes,
-        },
-      });
-    }
-
     return NextResponse.json(indexRequest, { status: 201 });
   } catch (error) {
     console.error(error instanceof Error ? error.message : error);

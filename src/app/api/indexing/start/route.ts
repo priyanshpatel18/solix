@@ -31,8 +31,15 @@ export async function POST(request: NextRequest) {
     if (!indexSettings) return NextResponse.json({ error: "Index request not found" }, { status: 404 });
 
     // Check for WebhookParams
-    const webhookParams = await prisma.params.findFirst();
-    if (!webhookParams) return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    let webhookParams = await prisma.params.findFirst();
+    if (!webhookParams) {
+      webhookParams = await prisma.params.create({
+        data: {
+          accountAddresses: [],
+          transactionTypes: [],
+        },
+      });
+    }
 
     // Register webhook
     const usedApi = await updateHeliusWebhook(indexSettings, webhookParams);
@@ -68,7 +75,10 @@ async function getAuthenticatedUser() {
   if (!session || !session.user.email) return null;
   return prisma.user.findFirst({
     where: { email: session.user.email },
-    include: { indexSettings: { include: { database: { include: { user: true } } } } },
+    include: {
+      indexSettings: { include: { database: { include: { user: true } } } },
+      databases: true,
+    },
   });
 }
 
@@ -87,16 +97,18 @@ async function updateHeliusWebhook(indexSettings: IndexSettings, webhookParams: 
   if (missingParams.length > 0 || !webhookParams.accountAddresses.includes(indexSettings.targetAddr)) {
     usedApi = true;
     const webhookBody = {
+      webhookURL: "https://solixdb.xyz/api/webhook",
+      webhookType: "enhanced",
       accountAddresses: [...new Set([...webhookParams.accountAddresses, indexSettings.targetAddr])],
       transactionTypes: [...new Set([...webhookParams.transactionTypes, ...missingParams])],
       authHeader: WEBHOOK_SECRET,
+      txnStatus: "all",
     };
 
     const response = await fetch(`${HELIUS_API_URL}/${WEBHOOK_ID}?api-key=${HELIUS_API_KEY}`, {
       method: "PUT",
       headers: {
         "Authorization": `${WEBHOOK_SECRET}`,
-        "Content-Type": "application/json"
       },
       body: JSON.stringify(webhookBody),
     });
@@ -105,6 +117,18 @@ async function updateHeliusWebhook(indexSettings: IndexSettings, webhookParams: 
       const errorText = await response.text();
       throw new Error(`Helius API error: ${errorText}`);
     }
+
+    await prisma.params.upsert({
+      where: { id: webhookParams.id },
+      create: {
+        accountAddresses: [...new Set([...webhookParams.accountAddresses, indexSettings.targetAddr])],
+        transactionTypes: [...new Set([...webhookParams.transactionTypes, ...missingParams])],
+      },
+      update: {
+        accountAddresses: [...new Set([...webhookParams.accountAddresses, indexSettings.targetAddr])],
+        transactionTypes: [...new Set([...webhookParams.transactionTypes, ...missingParams])],
+      }
+    });
   }
 
   return usedApi;
