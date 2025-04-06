@@ -113,6 +113,7 @@ async function updateDatabaseWithPastData(indexSettings: IndexSettings, database
   }
 
   const transactions = await response.json();
+
   if (!Array.isArray(transactions)) {
     throw new Error("Invalid data format from Helius API");
   }
@@ -136,8 +137,8 @@ async function updateDatabaseWithPastData(indexSettings: IndexSettings, database
           feePayer: txn.feePayer || txn.transaction?.message?.accountKeys[0] || "unknown",
           fee: txn.fee || 0,
           description: txn.description || null,
-          accountData: txn.accounts || txn.transaction?.message?.accountKeys || [],
-          instructions: txn.instructions || txn.transaction?.message?.instructions || [],
+          accountData: txn.accountData || [],
+          instructions: txn.instructions || [],
         };
 
         await insertTransferData(db, tableName, data);
