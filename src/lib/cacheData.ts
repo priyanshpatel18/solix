@@ -1,5 +1,12 @@
 import { Cluster, Database, IndexParams, IndexType, Plan } from "@prisma/client";
 import { redis } from "../db/redis";
+import { Queue } from "bullmq";
+
+const REDIS_FEEDING_QUEUE = process.env.REDIS_FEEDING_QUEUE || 'feedingQueue';
+
+export const feedingQueue = new Queue(REDIS_FEEDING_QUEUE, {
+  connection: redis,
+});
 
 export interface CachedSettings {
   databaseId: string;
@@ -25,7 +32,7 @@ export async function cacheData(
   targetAddr: string,
   indexType: IndexType,
   indexParams: IndexParams[],
-  cluster: Cluster
+  cluster: Cluster,
 ) {
   const userKey = `user:${database.id}`;
   const dbKey = `database:${database.id}`;
@@ -49,6 +56,16 @@ export async function cacheData(
     const settings: CachedSettings = { databaseId: database.id, targetAddr, indexType, indexParams, cluster, userId: user.id };
     await redis.set(settingsKey, JSON.stringify(settings));
   }
+}
+
+export async function pushDataToRedis(
+  database: Database,
+  transactions: any
+) {
+  await feedingQueue.add("feed", {
+    databaseId: database.id,
+    transactions,
+  });
 }
 
 export async function getCachedData() {

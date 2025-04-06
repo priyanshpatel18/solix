@@ -15,9 +15,10 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { User } from "../UserContext";
+import { TRANSFER } from "@/types/params";
 
 const solanaIndexCategories = [
-  { id: "TRANSFER" as IndexParams, name: "Transfer" },
+  { id: TRANSFER as IndexParams, name: "Transfer" },
   { id: "DEPOSIT" as IndexParams, name: "Deposit" },
   { id: "WITHDRAW" as IndexParams, name: "Withdraw" },
   { id: "NFT_SALE" as IndexParams, name: "NFT Sale" },

@@ -1,10 +1,7 @@
 import prisma from "@/db/prisma";
 import { auth } from "@/lib/auth";
-import { cacheData } from "@/lib/cacheData";
-import { TRANSFER } from "@/types/params";
-import { getDatabaseClient } from "@/utils/dbUtils";
-import { ensureTransferTableExists, insertTransferData } from "@/utils/tableUtils";
-import { Database, IndexParams, IndexSettings, Params } from "@prisma/client";
+import { cacheData, pushDataToRedis } from "@/lib/cacheData";
+import { IndexParams, IndexSettings, Params } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 const HELIUS_API_URL = "https://api.helius.xyz/v0/webhooks";
@@ -61,9 +58,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Fetch and store past transactions
-    updateDatabaseWithPastData(indexSettings, indexSettings.database)
-      .then(() => console.log("Historical data syncing complete"))
-      .catch((error) => console.error("Error syncing historical data:", error));
+    await pushDataToRedis(indexSettings.database, await getPastData(indexSettings));
 
     // Update IndexSettings
     await updateDatabaseRecords(user.id, indexSettings.id, usedApi);
@@ -96,7 +91,7 @@ async function getAuthenticatedUser() {
   });
 }
 
-async function updateDatabaseWithPastData(indexSettings: IndexSettings, database: Database) {
+async function getPastData(indexSettings: IndexSettings) {
   const HELIUS_API = indexSettings.cluster === "DEVNET" ? HELIUS_DEVNET_API : HELIUS_MAINNET_API;
   const HELIUS_API_KEY = indexSettings.cluster === "DEVNET" ? HELIUS_DEVNET_API_KEY : HELIUS_MAINNET_API_KEY;
 
@@ -115,38 +110,10 @@ async function updateDatabaseWithPastData(indexSettings: IndexSettings, database
   const transactions = await response.json();
 
   if (!Array.isArray(transactions)) {
-    throw new Error("Invalid data format from Helius API");
+    return [];
   }
 
-  const db = await getDatabaseClient(database);
-
-  let transferTableChecked = false;
-  for (const txn of transactions) {
-    const type = txn.type;
-    switch (type) {
-      case TRANSFER:
-        const tableName = indexSettings.indexType.toString();
-        if (!transferTableChecked) {
-          await ensureTransferTableExists(db, tableName);
-          transferTableChecked = true;
-        }
-
-        const data = {
-          slot: txn.slot,
-          signature: txn.signature,
-          feePayer: txn.feePayer || txn.transaction?.message?.accountKeys[0] || "unknown",
-          fee: txn.fee || 0,
-          description: txn.description || null,
-          accountData: txn.accountData || [],
-          instructions: txn.instructions || [],
-        };
-
-        await insertTransferData(db, tableName, data);
-        break;
-      default:
-        break;
-    }
-  }
+  return transactions;
 }
 
 function getIndexSettings(user: any, databaseId: string) {

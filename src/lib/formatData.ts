@@ -1,6 +1,8 @@
+import { TRANSFER } from "@/types/params";
+
 export function formatData(data: any): any {
   switch (data.type) {
-    case "TRANSFER":
+    case TRANSFER:
       return {
         type: data.type,
         slot: data.slot,

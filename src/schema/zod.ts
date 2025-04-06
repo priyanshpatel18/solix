@@ -1,3 +1,4 @@
+import { TRANSFER } from "@/types/params";
 import { z } from "zod";
 
 export const databaseFormSchema = z.object({
@@ -11,7 +12,7 @@ export const databaseFormSchema = z.object({
 
 export const indexRequestSchema = z.object({
   databaseId: z.string().min(1, "Database selection is required"),
-  categoryId: z.enum(["TRANSFER", "DEPOSIT", "WITHDRAW", "NFT_SALE", "NFT_MINT", "SWAP", "TOKEN_MINT", "LOAN", "STAKE_TOKEN", "BURN"]),
+  categoryId: z.enum([TRANSFER, "DEPOSIT", "WITHDRAW", "NFT_SALE", "NFT_MINT", "SWAP", "TOKEN_MINT", "LOAN", "STAKE_TOKEN", "BURN"]),
   indexType: z.enum(["TRANSACTIONS", "TOKEN_ACCOUNTS", "PROGRAM_LOGS", "NFTS"]),
   targetAddr: z.string().min(1, "Target address is required"),
   cluster: z.enum(["DEVNET", "MAINNET"]),
