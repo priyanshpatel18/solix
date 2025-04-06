@@ -105,7 +105,7 @@ export default function StoreDatabaseForm({ setShowStoreDatabaseForm, setComplet
           <Label htmlFor="dbName">Database Name</Label>
           <Input id="dbName" placeholder="e.g., my_database" {...form.register("dbName")} />
         </div>
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button type="submit" className="w-full cursor-pointer" disabled={isSubmitting}>
           {isSubmitting ? "Saving..." : "Save Connection"}
         </Button>
       </form>

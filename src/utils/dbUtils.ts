@@ -1,4 +1,4 @@
-import { decrypt } from "@/lib/encrypt";
+import { decrypt } from "../lib/encrypt";
 import { Database, Prisma, PrismaClient } from "@prisma/client";
 
 export async function createDatabaseIfNotExists(dbConfig: Database) {

@@ -1,7 +1,10 @@
 import prisma from "@/db/prisma";
 import { auth } from "@/lib/auth";
 import { cacheData } from "@/lib/cacheData";
-import { IndexParams, IndexSettings, Params } from "@prisma/client";
+import { TRANSFER } from "@/types/params";
+import { getDatabaseClient } from "@/utils/dbUtils";
+import { ensureTransferTableExists, insertTransferData } from "@/utils/tableUtils";
+import { Database, IndexParams, IndexSettings, Params } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 const HELIUS_API_URL = "https://api.helius.xyz/v0/webhooks";
@@ -11,6 +14,9 @@ const WEBHOOK_DEVNET_SECRET = process.env.WEBHOOK_DEVNET_SECRET;
 const WEBHOOK_MAINNET_SECRET = process.env.WEBHOOK_MAINNET_SECRET;
 const MAINNET_WEBHOOK_ID = process.env.MAINNET_WEBHOOK_ID;
 const DEVNET_WEBHOOK_ID = process.env.DEVNET_WEBHOOK_ID;
+const WEBHOOK_CALLBACK_URL = process.env.WEBHOOK_CALLBACK_URL || "http://localhost:3000/api/webhook";
+const HELIUS_MAINNET_API = "https://api.helius.xyz/v0/addresses"
+const HELIUS_DEVNET_API = "https://api-devnet.helius.xyz/v0/addresses"
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +60,9 @@ export async function POST(request: NextRequest) {
       indexSettings.cluster
     );
 
+    // Fetch and store past transactions
+    await updateDatabaseWithPastData(indexSettings, indexSettings.database);
+
     // Update IndexSettings
     await updateDatabaseRecords(user.id, indexSettings.id, usedApi);
 
@@ -82,6 +91,61 @@ async function getAuthenticatedUser() {
   });
 }
 
+async function updateDatabaseWithPastData(indexSettings: IndexSettings, database: Database) {
+  const HELIUS_API = indexSettings.cluster === "DEVNET" ? HELIUS_DEVNET_API : HELIUS_MAINNET_API;
+  const HELIUS_API_KEY = indexSettings.cluster === "DEVNET" ? HELIUS_DEVNET_API_KEY : HELIUS_MAINNET_API_KEY;
+
+  const response = await fetch(`${HELIUS_API}/${indexSettings.targetAddr}/transactions/?api-key=${HELIUS_API_KEY}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Helius API error: ${errorText}`);
+  }
+
+  const transactions = await response.json();
+  if (!Array.isArray(transactions)) {
+    throw new Error("Invalid data format from Helius API");
+  }
+
+  const db = await getDatabaseClient(database);
+
+
+  let transferTableChecked = false;
+  for (const txn of transactions) {
+
+    const type = txn.type;
+    switch (type) {
+      case TRANSFER:
+        const tableName = indexSettings.indexType.toString();
+        if (!transferTableChecked) {
+          await ensureTransferTableExists(db, tableName);
+          transferTableChecked = true;
+        }
+
+        const data = {
+          slot: txn.slot,
+          signature: txn.signature,
+          feePayer: txn.feePayer || txn.transaction?.message?.accountKeys[0] || "unknown",
+          fee: txn.fee || 0,
+          description: txn.description || null,
+          accountData: txn.accounts || txn.transaction?.message?.accountKeys || [],
+          instructions: txn.instructions || txn.transaction?.message?.instructions || [],
+        };
+
+        await insertTransferData(db, tableName, data);
+        console.log(`✅ Successfully inserted ${transactions.length} transactions into ${tableName}`);
+        break;
+      default:
+        break;
+    }
+  }
+}
+
 function getIndexSettings(user: any, databaseId: string) {
   return user.indexSettings.find((req: IndexSettings) => req.databaseId === databaseId);
 }
@@ -97,7 +161,7 @@ async function updateHeliusWebhook(indexSettings: IndexSettings, webhookParams: 
   if (missingParams.length > 0 || !webhookParams.accountAddresses.includes(indexSettings.targetAddr)) {
     usedApi = true;
     const webhookBody = {
-      webhookURL: "https://solixdb.xyz/api/webhook",
+      webhookURL: WEBHOOK_CALLBACK_URL,
       webhookType: "enhanced",
       accountAddresses: [...new Set([...webhookParams.accountAddresses, indexSettings.targetAddr])],
       transactionTypes: [...new Set([...webhookParams.transactionTypes, ...missingParams])],
