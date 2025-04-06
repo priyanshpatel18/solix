@@ -1,9 +1,8 @@
-import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
-import Github from "next-auth/providers/github";
 import prisma from "@/db/prisma";
-import { toast } from "sonner";
-import { NextResponse } from "next/server";
+import NextAuth from "next-auth";
+import Github from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
+import Discord from "next-auth/providers/discord";
 
 declare module "next-auth" {
   interface User {
@@ -115,6 +114,52 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         return { id: user.id, name: user.name, image: user.image, email: user.email };
+      },
+    }),
+    Discord({ 
+      clientId: process.env.AUTH_GITHUB_ID,
+      clientSecret: process.env.AUTH_GITHUB_SECRET,
+      async profile(profile) {
+        const { email, username, avatar, id } = profile;
+        if (!email) {
+          throw new Error("Missing email");
+        }
+
+        let user = await prisma.user.findUnique({
+          where: { email },
+          include: { accounts: true },
+        });
+
+        if (!user) {
+          user = await prisma.user.create({
+            data: {
+              email,
+              name: username,
+              image: `https://cdn.discordapp.com/avatars/${id}/${avatar}`,
+              accounts: {
+                create: {
+                  provider: "DISCORD",
+                  providerAccountId: String(id),
+                },
+              },
+            },
+            include: { accounts: true },
+          });
+        } else {
+          const discordAccount = user.accounts.find((acc) => acc.provider === "DISCORD");
+
+          if (!discordAccount) {
+            await prisma.account.create({
+              data: {
+                provider: "DISCORD",
+                providerAccountId: String(id),
+                user: { connect: { id: user.id } },
+              },
+            });
+          }
+        }
+
+        return { id: user.id, name: user.name, image: user.image, email };
       },
     }),
   ],
