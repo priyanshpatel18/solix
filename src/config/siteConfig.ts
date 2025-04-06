@@ -4,8 +4,8 @@ const { title, description, ogImage, baseURL } = {
   title: "SolixDB",
   description:
     "SolixDB is a powerful blockchain indexing platform that enables seamless Solana data ingestion, real-time analytics, and efficient query capabilities. Designed for developers and enterprises, SolixDB offers a scalable solution to track on-chain events, transactions, and token activity with ease.",
-  baseURL: "https://solixdb.priyanshpatel.site",
-  ogImage: `https://solixdb.priyanshpatel.site/open-graph.png`,
+  baseURL: "https://solixdb.xyz",
+  ogImage: `https://solixdb.xyz/open-graph.png`,
 };
 
 export const siteConfig: Metadata = {
