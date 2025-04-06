@@ -61,12 +61,17 @@ export async function POST(request: NextRequest) {
     );
 
     // Fetch and store past transactions
-    await updateDatabaseWithPastData(indexSettings, indexSettings.database);
+    updateDatabaseWithPastData(indexSettings, indexSettings.database)
+      .then(() => console.log("Historical data syncing complete"))
+      .catch((error) => console.error("Error syncing historical data:", error));
 
     // Update IndexSettings
     await updateDatabaseRecords(user.id, indexSettings.id, usedApi);
 
-    return NextResponse.json({ message: "Indexing started" }, { status: 200 });
+    return NextResponse.json(
+      { message: "Indexing has been initiated. Syncing historical transactions now..." },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error registering webhook:", error);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
@@ -108,12 +113,13 @@ async function updateDatabaseWithPastData(indexSettings: IndexSettings, database
   }
 
   const transactions = await response.json();
+  console.log(transactions);
+
   if (!Array.isArray(transactions)) {
     throw new Error("Invalid data format from Helius API");
   }
 
   const db = await getDatabaseClient(database);
-
 
   let transferTableChecked = false;
   for (const txn of transactions) {
@@ -138,7 +144,6 @@ async function updateDatabaseWithPastData(indexSettings: IndexSettings, database
         };
 
         await insertTransferData(db, tableName, data);
-        console.log(`✅ Successfully inserted ${transactions.length} transactions into ${tableName}`);
         break;
       default:
         break;
