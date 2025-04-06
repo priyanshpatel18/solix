@@ -116,9 +116,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return { id: user.id, name: user.name, image: user.image, email: user.email };
       },
     }),
-    Discord({ 
-      clientId: process.env.AUTH_GITHUB_ID,
-      clientSecret: process.env.AUTH_GITHUB_SECRET,
+    Discord({
       async profile(profile) {
         const { email, username, avatar, id } = profile;
         if (!email) {
