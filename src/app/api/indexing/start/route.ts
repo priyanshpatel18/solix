@@ -113,8 +113,6 @@ async function updateDatabaseWithPastData(indexSettings: IndexSettings, database
   }
 
   const transactions = await response.json();
-  console.log(transactions);
-
   if (!Array.isArray(transactions)) {
     throw new Error("Invalid data format from Helius API");
   }
@@ -123,7 +121,6 @@ async function updateDatabaseWithPastData(indexSettings: IndexSettings, database
 
   let transferTableChecked = false;
   for (const txn of transactions) {
-
     const type = txn.type;
     switch (type) {
       case TRANSFER:

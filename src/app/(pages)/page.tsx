@@ -136,7 +136,8 @@ export default function HomePage() {
         return toast.error("Failed to start indexing.");
       }
 
-      toast.success("Indexing started successfully!");
+      const { message } = await response.json();
+      toast.success(message);
       setCompletedSteps((prev) => [...prev, 2]);
     } catch (error) {
       console.error("❌ Error starting indexing:", error);
