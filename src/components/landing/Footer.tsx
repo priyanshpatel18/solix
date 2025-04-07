@@ -33,7 +33,7 @@ export default function Footer({ }) {
             <span className="sr-only">Twitter</span>
           </Link>
           <Link
-            href="https://github.com/priyanshpatel18/solixdb"
+            href="https://github.com/priyanshpatel18/solix"
             target="_blank"
             rel="noopener noreferrer"
             className={cn("hover:text-foreground transition-colors")}

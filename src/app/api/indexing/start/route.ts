@@ -4,7 +4,6 @@ import { cacheData, pushDataToRedis } from "@/lib/cacheData";
 import { IndexParams, IndexSettings, Params } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
-const HELIUS_API_URL = "https://api.helius.xyz/v0/webhooks";
 const HELIUS_MAINNET_API_KEY = process.env.HELIUS_MAINNET_API_KEY;
 const HELIUS_DEVNET_API_KEY = process.env.HELIUS_DEVNET_API_KEY;
 const WEBHOOK_DEVNET_SECRET = process.env.WEBHOOK_DEVNET_SECRET;
@@ -12,8 +11,8 @@ const WEBHOOK_MAINNET_SECRET = process.env.WEBHOOK_MAINNET_SECRET;
 const MAINNET_WEBHOOK_ID = process.env.MAINNET_WEBHOOK_ID;
 const DEVNET_WEBHOOK_ID = process.env.DEVNET_WEBHOOK_ID;
 const WEBHOOK_CALLBACK_URL = process.env.WEBHOOK_CALLBACK_URL || "http://localhost:3000/api/webhook";
-const HELIUS_MAINNET_API = "https://api.helius.xyz/v0/addresses"
-const HELIUS_DEVNET_API = "https://api-devnet.helius.xyz/v0/addresses"
+const HELIUS_MAINNET_API = "https://api.helius.xyz/v0"
+const HELIUS_DEVNET_API = "https://api-devnet.helius.xyz/v0"
 
 export async function POST(request: NextRequest) {
   try {
@@ -95,7 +94,7 @@ async function getPastData(indexSettings: IndexSettings) {
   const HELIUS_API = indexSettings.cluster === "DEVNET" ? HELIUS_DEVNET_API : HELIUS_MAINNET_API;
   const HELIUS_API_KEY = indexSettings.cluster === "DEVNET" ? HELIUS_DEVNET_API_KEY : HELIUS_MAINNET_API_KEY;
 
-  const response = await fetch(`${HELIUS_API}/${indexSettings.targetAddr}/transactions/?api-key=${HELIUS_API_KEY}`, {
+  const response = await fetch(`${HELIUS_API}/addresses/${indexSettings.targetAddr}/transactions/?api-key=${HELIUS_API_KEY}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -127,6 +126,7 @@ async function updateHeliusWebhook(indexSettings: IndexSettings, webhookParams: 
   const WEBHOOK_SECRET = indexSettings.cluster === "DEVNET" ? WEBHOOK_DEVNET_SECRET : WEBHOOK_MAINNET_SECRET;
   const WEBHOOK_ID = indexSettings.cluster === "DEVNET" ? DEVNET_WEBHOOK_ID : MAINNET_WEBHOOK_ID;
   const HELIUS_API_KEY = indexSettings.cluster === "DEVNET" ? HELIUS_DEVNET_API_KEY : HELIUS_MAINNET_API_KEY;
+  const HELIUS_API_URL = indexSettings.cluster === "DEVNET" ? HELIUS_DEVNET_API : HELIUS_MAINNET_API;
 
   if (missingParams.length > 0 || !webhookParams.accountAddresses.includes(indexSettings.targetAddr)) {
     usedApi = true;
@@ -139,7 +139,7 @@ async function updateHeliusWebhook(indexSettings: IndexSettings, webhookParams: 
       txnStatus: "all",
     };
 
-    const response = await fetch(`${HELIUS_API_URL}/${WEBHOOK_ID}?api-key=${HELIUS_API_KEY}`, {
+    const response = await fetch(`${HELIUS_API_URL}/webhooks/${WEBHOOK_ID}?api-key=${HELIUS_API_KEY}`, {
       method: "PUT",
       headers: {
         "Authorization": `${WEBHOOK_SECRET}`,
