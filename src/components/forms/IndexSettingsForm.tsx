@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { montserrat } from "@/fonts/fonts";
 import { indexRequestSchema } from "@/schema/zod";
+import { TRANSFER } from "@/types/params";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Cluster, IndexParams, IndexType } from "@prisma/client";
 import { motion } from "framer-motion";
@@ -15,26 +16,25 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { User } from "../UserContext";
-import { TRANSFER } from "@/types/params";
 
 const solanaIndexCategories = [
   { id: TRANSFER as IndexParams, name: "Transfer" },
-  { id: "DEPOSIT" as IndexParams, name: "Deposit" },
-  { id: "WITHDRAW" as IndexParams, name: "Withdraw" },
-  { id: "NFT_SALE" as IndexParams, name: "NFT Sale" },
-  { id: "NFT_MINT" as IndexParams, name: "NFT Mint" },
-  { id: "SWAP" as IndexParams, name: "Swap" },
-  { id: "TOKEN_MINT" as IndexParams, name: "Token Mint" },
-  { id: "LOAN" as IndexParams, name: "Loan" },
-  { id: "STAKE_TOKEN" as IndexParams, name: "Stake Token" },
-  { id: "BURN" as IndexParams, name: "Burn" },
+  // { id: "DEPOSIT" as IndexParams, name: "Deposit" },
+  // { id: "WITHDRAW" as IndexParams, name: "Withdraw" },
+  // { id: "NFT_SALE" as IndexParams, name: "NFT Sale" },
+  // { id: "NFT_MINT" as IndexParams, name: "NFT Mint" },
+  // { id: "SWAP" as IndexParams, name: "Swap" },
+  // { id: "TOKEN_MINT" as IndexParams, name: "Token Mint" },
+  // { id: "LOAN" as IndexParams, name: "Loan" },
+  // { id: "STAKE_TOKEN" as IndexParams, name: "Stake Token" },
+  // { id: "BURN" as IndexParams, name: "Burn" },
 ];
 
 const indexTypes = [
   { id: "TRANSACTIONS" as IndexType, name: "Transactions" },
-  { id: "TOKEN_ACCOUNTS" as IndexType, name: "Token Accounts" },
-  { id: "PROGRAM_LOGS" as IndexType, name: "Program Logs" },
-  { id: "NFTS" as IndexType, name: "NFTs" },
+  // { id: "TOKEN_ACCOUNTS" as IndexType, name: "Token Accounts" },
+  // { id: "PROGRAM_LOGS" as IndexType, name: "Program Logs" },
+  // { id: "NFTS" as IndexType, name: "NFTs" },
 ];
 
 const cluster = [
@@ -104,12 +104,12 @@ export default function IndexRequestForm({ setShowIndexRequestForm, setCompleted
         <div className="flex flex-col gap-2">
           <Label>Database</Label>
           <Select onValueChange={(value) => setValue("databaseId", value)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full cursor-pointer">
               <SelectValue placeholder="Choose a database" />
             </SelectTrigger>
             <SelectContent>
               {databases.length > 0 && databases.map((db) => (
-                <SelectItem key={db.id} value={db.id}>{db.name}</SelectItem>
+                <SelectItem className="cursor-pointer" key={db.id} value={db.id}>{db.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -118,12 +118,12 @@ export default function IndexRequestForm({ setShowIndexRequestForm, setCompleted
         <div className="flex flex-col gap-2">
           <Label>Category</Label>
           <Select onValueChange={(value) => setValue("categoryId", value as IndexParams)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full cursor-pointer">
               <SelectValue placeholder="Choose a category" />
             </SelectTrigger>
             <SelectContent>
               {solanaIndexCategories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                <SelectItem className="cursor-pointer" key={cat.id} value={cat.id}>{cat.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -132,12 +132,12 @@ export default function IndexRequestForm({ setShowIndexRequestForm, setCompleted
         <div className="flex flex-col gap-2">
           <Label>Index Type</Label>
           <Select onValueChange={(value) => setValue("indexType", value as IndexType)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full cursor-pointer">
               <SelectValue placeholder="Choose an index type" />
             </SelectTrigger>
             <SelectContent>
               {indexTypes.map((type) => (
-                <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                <SelectItem className="cursor-pointer" key={type.id} value={type.id}>{type.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -146,12 +146,12 @@ export default function IndexRequestForm({ setShowIndexRequestForm, setCompleted
         <div className="flex flex-col gap-2">
           <Label>Cluster</Label>
           <Select onValueChange={(value) => setValue("cluster", value as Cluster)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full cursor-pointer">
               <SelectValue placeholder="Choose a cluster" />
             </SelectTrigger>
             <SelectContent>
               {cluster.map((type) => (
-                <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                <SelectItem className="cursor-pointer" key={type.id} value={type.id}>{type.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>

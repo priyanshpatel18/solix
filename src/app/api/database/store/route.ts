@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Validate request body using databaseFormSchema
+    // Validate request body
     const parsedData = databaseFormSchema.parse(body);
     if (!parsedData) {
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 });

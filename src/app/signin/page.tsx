@@ -10,7 +10,6 @@ import { useTheme } from "next-themes";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
 
 export default function SignInPage() {
   const { resolvedTheme } = useTheme();
