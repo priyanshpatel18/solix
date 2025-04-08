@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { montserrat } from "@/fonts/fonts";
@@ -17,12 +17,13 @@ type DatabaseFormValues = z.infer<typeof databaseFormSchema>;
 
 interface DatabaseFormProps {
   setShowStoreDatabaseForm: Dispatch<SetStateAction<boolean>>;
-  setCompletedSteps: Dispatch<SetStateAction<number[]>>;
+  setCompletedSteps?: Dispatch<SetStateAction<number[]>>;
   setUser: Dispatch<SetStateAction<User | null>>;
 }
 
 export default function StoreDatabaseForm({ setShowStoreDatabaseForm, setCompletedSteps, setUser }: DatabaseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [connectionString, setConnectionString] = useState("");
   const form = useForm({ resolver: zodResolver(databaseFormSchema) });
 
   useEffect(() => {
@@ -30,6 +31,35 @@ export default function StoreDatabaseForm({ setShowStoreDatabaseForm, setComplet
       setShowStoreDatabaseForm(false);
     }
   }, [form.formState.isSubmitSuccessful, setShowStoreDatabaseForm]);
+
+  const parseConnectionString = () => {
+    try {
+      const urlPattern = /^(?:([^:]+):\/\/)?(?:([^:@]+)(?::([^@]+))?@)?([^:/?#]+)(?::(\d+))?(?:\/([^?#]+))?/;
+      const matches = connectionString.match(urlPattern);
+
+      if (!matches) {
+        throw new Error("Invalid connection string format");
+      }
+
+      const [, protocol, username, password, host, port, dbName] = matches;
+
+      if (!host) {
+        throw new Error("Could not extract host from connection string");
+      }
+
+      // Update form fields
+      form.setValue("host", host);
+      if (username) form.setValue("username", username);
+      if (password) form.setValue("password", password);
+      form.setValue("port", "5432");
+      if (dbName) form.setValue("dbName", dbName);
+
+      toast.success("Connection details parsed successfully!");
+    } catch (error) {
+      console.error("Parsing error:", error);
+      toast.error("Failed to parse connection string. Please check the format.");
+    }
+  };
 
   const onSubmit = async (data: DatabaseFormValues) => {
     setIsSubmitting(true);
@@ -43,7 +73,6 @@ export default function StoreDatabaseForm({ setShowStoreDatabaseForm, setComplet
 
       if (response.ok) {
         const { database } = await response.json();
-        console.log(database);
 
         setUser((prevUser) => {
           if (prevUser) {
@@ -56,7 +85,8 @@ export default function StoreDatabaseForm({ setShowStoreDatabaseForm, setComplet
         });
 
         toast.success("Database connection saved!");
-        setCompletedSteps((prev) => [...prev, 0]);
+        if (setCompletedSteps)
+          setCompletedSteps((prev) => [...prev, 0]);
       } else {
         const errorData = await response.json();
         toast.error(errorData?.error || "Something went wrong while saving.");
@@ -76,6 +106,31 @@ export default function StoreDatabaseForm({ setShowStoreDatabaseForm, setComplet
         <DialogTitle className={`text-2xl font-semibold ${montserrat}`}>Database Setup</DialogTitle>
       </DialogHeader>
       <p className="text-muted-foreground mb-6">Enter your database connection details to begin indexing.</p>
+
+      {/* Connection URL Parser Section */}
+      <div className="space-y-2 mb-6">
+        <Label htmlFor="connectionString">Connection URL (optional)</Label>
+        <div className="flex gap-2">
+          <Input
+            id="connectionString"
+            placeholder="e.g., postgres://user:pass@host:5432/dbname"
+            value={connectionString}
+            onChange={(e) => setConnectionString(e.target.value)}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={parseConnectionString}
+            disabled={!connectionString}
+          >
+            Parse
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Paste your full connection string to auto-fill the form below
+        </p>
+      </div>
+
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="name">Connection Name</Label>

@@ -27,8 +27,16 @@ export default async function PagesLayout({ children }: PagesLayoutProps) {
       email: session?.user?.email
     },
     include: {
-      databases: true,
-      indexSettings: true,
+      databases: {
+        include: {
+          indexSettings: true,
+        }
+      },
+      indexSettings: {
+        include: {
+          database: true,
+        }
+      },
     }
   });
 

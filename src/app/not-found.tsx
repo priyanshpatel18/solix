@@ -44,10 +44,10 @@ export default function NotFound() {
         <p className="text-lg text-muted-foreground mb-6">
           The page you are looking for does not exist.
         </p>
-        <Button onClick={() => router.back()} className="mr-2">
+        <Button onClick={() => router.back()} className="mr-2 cursor-pointer">
           Go Back
         </Button>
-        <Button onClick={() => router.push("/")} variant="secondary">
+        <Button onClick={() => router.push("/")} variant="secondary" className="cursor-pointer">
           Go to Homepage
         </Button>
       </motion.div>

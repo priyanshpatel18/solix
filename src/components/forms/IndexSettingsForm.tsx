@@ -15,7 +15,7 @@ import { Dispatch, SetStateAction, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { User } from "../UserContext";
+import { ContextIndex, User } from "../UserContext";
 
 const solanaIndexCategories = [
   { id: TRANSFER as IndexParams, name: "Transfer" },
@@ -46,10 +46,10 @@ type IndexRequestValues = z.infer<typeof indexRequestSchema>;
 
 interface IndexRequestFormProps {
   setShowIndexRequestForm: Dispatch<SetStateAction<boolean>>;
-  setCompletedSteps: Dispatch<SetStateAction<number[]>>;
+  setCompletedSteps?: Dispatch<SetStateAction<number[]>>;
   databases: { id: string; name: string }[];
   setUser: Dispatch<SetStateAction<User | null>>;
-  setDatabaseId: Dispatch<SetStateAction<string>>;
+  setDatabaseId?: Dispatch<SetStateAction<string>>;
 }
 
 export default function IndexRequestForm({ setShowIndexRequestForm, setCompletedSteps, databases, setUser, setDatabaseId }: IndexRequestFormProps) {
@@ -70,16 +70,19 @@ export default function IndexRequestForm({ setShowIndexRequestForm, setCompleted
 
       if (response.ok) {
         toast.success("Indexing request submitted!");
-        setCompletedSteps((prev) => [...prev, 1]);
+        if (setCompletedSteps)
+          setCompletedSteps((prev) => [...prev, 1]);
         setShowIndexRequestForm(false);
-        setDatabaseId(data.databaseId);
+        if (setDatabaseId)
+          setDatabaseId(data.databaseId);
 
-        const { indexSettings } = await response.json();
+        const indexRequest: ContextIndex = await response.json();
+
         setUser((prevUser) => {
           if (!prevUser) return prevUser;
           return {
             ...prevUser,
-            indexSettings: [...prevUser.indexSettings, indexSettings],
+            indexSettings: [...prevUser.indexSettings, indexRequest],
           };
         });
       } else {

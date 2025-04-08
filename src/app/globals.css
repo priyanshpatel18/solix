@@ -91,21 +91,21 @@ input[type="number"] {
 .dark {
   --background: oklch(0.14 0.01 264.37);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.19 0.02 264.37);
+  --card: oklch(0.21 0.03 264.37);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.19 0.02 264.37);
+  --popover: oklch(0.21 0.03 264.3);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.60 0.24 264.37);
+  --primary: oklch(0.62 0.26 264.37);
   --primary-foreground: oklch(0.12 0 0);
-  --secondary: oklch(0.25 0.03 264.37);
+  --secondary: oklch(0.27 0.04 264.37);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.25 0.01 264.37);
-  --muted-foreground: oklch(0.70 0.03 264.37);
-  --accent: oklch(0.25 0.04 264.37);
+  --muted-foreground: oklch(0.72 0.04 264.37);
+  --accent: oklch(0.26 0.05 264.37);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.22 0.02 264.37);
-  --input: oklch(0.22 0.03 264.37);
+  --border: oklch(0.24 0.03 264.37);
+  --input: oklch(0.23 0.03 264.37);
   --ring: oklch(0.53 0.22 264.37 / 30%);
   --chart-1: oklch(0.60 0.24 264.37);
   --chart-2: oklch(0.65 0.18 304.70);
@@ -114,11 +114,11 @@ input[type="number"] {
   --chart-5: oklch(0.50 0.22 344.37);
   --sidebar: oklch(0.18 0.01 264.37);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.60 0.24 264.37);
+  --sidebar-primary: oklch(0.62 0.26 264.37);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.25 0.04 264.37);
+  --sidebar-accent: oklch(0.26 0.05 264.37);
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.22 0.02 264.37);
+  --sidebar-border: oklch(0.24 0.03 264.37);
   --sidebar-ring: oklch(0.53 0.22 264.37 / 30%);
 }
 

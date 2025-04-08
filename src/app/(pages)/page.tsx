@@ -10,6 +10,7 @@ import { montserrat } from "@/fonts/fonts";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle, Database, Search, Settings } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -81,21 +82,13 @@ const fadeInUp = {
   }
 };
 
+
 export default function HomePage() {
-  const user = useUserContext();
+  const { user } = useUserContext();
 
   useEffect(() => {
     if (user) {
-      setStoreUser(user);
-      if (user.databases && user.databases.length > 0) {
-        setCompletedSteps([0]);
-      }
-      if (user.indexSettings && user.indexSettings.length > 0) {
-        setCompletedSteps([0, 1]);
-        if (user.indexSettings[0].status === "IN_PROGRESS") {
-          setCompletedSteps([0, 1, 2]);
-        }
-      }
+      setStateUser(user);
     }
   }, [user]);
 
@@ -107,15 +100,31 @@ export default function HomePage() {
 
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [dialogContent, setDialogContent] = useState<"STORE" | "INDEX" | null>(null);
-  const [storeUser, setStoreUser] = useState<User | null>(null);
   const [databaseId, setDatabaseId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [stateUser, setStateUser] = useState<User | null>(null);
 
   useEffect(() => {
-    if (storeUser && storeUser.databases.length > 0 && storeUser.indexSettings.length > 0) {
-      setDatabaseId(storeUser.databases[0].id);
+    if (user && user.databases.length > 0 && user.indexSettings.length > 0) {
+      setDatabaseId(user.databases[0].id);
+
+      if (user.databases.length > 0) {
+        setCompletedSteps([0]);
+      }
+      if (user.indexSettings.length > 0) {
+        setCompletedSteps([0, 1]);
+      }
+      const statusArray = ["IN_PROGRESS", "COMPLETED", "FAILED"];
+      if (user.databases.length > 0 && user.indexSettings.length > 0 && user.plan === "FREE" && statusArray.includes(user.indexSettings[0].status)) {
+        setCompletedSteps([0, 1, 2]);
+      }
     }
-  }, [storeUser]);
+    if (user) {
+      setStateUser(user);
+    }
+  }, [user]);
+
+  const router = useRouter();
 
   async function startIndexing() {
     try {
@@ -157,7 +166,9 @@ export default function HomePage() {
       case "START":
         await startIndexing();
         break;
-
+      case "EXPLORE":
+        router.push("/dashboard");
+        break;
       default:
         break;
     }
@@ -168,9 +179,10 @@ export default function HomePage() {
     return !completedSteps.includes(index - 1);
   };
 
+
   return (
     <Dialog open={dialogContent !== null} onOpenChange={() => setDialogContent(null)}>
-      <div className={cn("py-8 px-4 md:px-6 bg-background min-h-[calc(100vh-8.1rem)]", montserrat)}>
+      <div className={cn("py-8 px-4 md:px-6 bg-background h-[calc(100vh-8.1rem)]", montserrat)}>
         <motion.div
           className="max-w-2xl mx-auto"
           variants={containerVariants}
@@ -256,21 +268,6 @@ export default function HomePage() {
               </motion.div>
             ))}
           </div>
-
-          {completedSteps.length === steps.length && (
-            <motion.div
-              className="mt-8 text-center bg-primary/10 p-4 rounded-lg"
-              variants={fadeInUp}
-              initial="hidden"
-              animate="visible"
-            >
-              <h3 className="text-xl font-medium text-primary">All Steps Completed!</h3>
-              <p className="mt-1 text-muted-foreground">Your blockchain data is now indexed and ready to explore.</p>
-              <Button asChild className="mt-3">
-                <a href="/explorer">Go to Data Explorer</a>
-              </Button>
-            </motion.div>
-          )}
         </motion.div>
       </div>
 
@@ -279,15 +276,15 @@ export default function HomePage() {
           <StoreDatabaseForm
             setShowStoreDatabaseForm={() => setDialogContent(null)}
             setCompletedSteps={setCompletedSteps}
-            setUser={setStoreUser}
+            setUser={setStateUser}
           />
         )}
         {dialogContent === "INDEX" && (
           <IndexRequestForm
             setShowIndexRequestForm={() => setDialogContent(null)}
             setCompletedSteps={setCompletedSteps}
-            setUser={setStoreUser}
-            databases={storeUser?.databases || []}
+            setUser={setStateUser}
+            databases={stateUser?.databases || []}
             setDatabaseId={setDatabaseId}
           />
         )}

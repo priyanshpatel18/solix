@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid category type' }, { status: 400 });
     }
 
-    const indexRequest = await prisma.indexSettings.create({
+    const indexSettings = await prisma.indexSettings.create({
       data: {
         targetAddr,
         indexType,
@@ -40,9 +40,12 @@ export async function POST(req: NextRequest) {
         status: "PENDING",
         cluster,
       },
+      include: {
+        database: true,
+      }
     });
 
-    return NextResponse.json(indexRequest, { status: 201 });
+    return NextResponse.json(indexSettings, { status: 201 });
   } catch (error) {
     console.error(error instanceof Error ? error.message : error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });

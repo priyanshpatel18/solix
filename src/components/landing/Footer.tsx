@@ -6,7 +6,7 @@ export default function Footer({ }) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bottom-0 left-0 w-full bg-background border-t py-3 md:py-5 z-50 h-16">
+    <footer className="bottom-0 left-0 w-full bg-background border-t border-border py-3 md:py-5 z-50 h-16 box-border">
       <div className="flex items-center justify-between space-y-4 md:space-y-0 px-10">
         <div className="flex items-center space-x-2 text-muted-foreground">
           <span>© {currentYear} SolixDB</span>
