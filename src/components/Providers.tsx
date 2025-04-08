@@ -3,6 +3,7 @@
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { ComponentProps, ReactNode, useEffect, useState } from "react";
+import { UserProvider } from "./UserContext";
 
 interface ProviderProps {
   children: ReactNode;
@@ -12,7 +13,9 @@ export default function Providers({ children }: ProviderProps) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light">
       <SessionProvider>
-        {children}
+        <UserProvider user={null}>
+          {children}
+        </UserProvider>
       </SessionProvider>
     </ThemeProvider>
   );

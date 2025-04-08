@@ -14,11 +14,13 @@ export default async function PagesLayout({ children }: PagesLayoutProps) {
 
   if (!session || !session.user.email) {
     return (
-      <main>
-        <Navbar session={session} />
-        {children}
-        <Footer />
-      </main>
+      <UserProvider user={null}>
+        <main>
+          <Navbar session={session} />
+          {children}
+          <Footer />
+        </main>
+      </UserProvider>
     );
   }
 

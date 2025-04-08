@@ -9,13 +9,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import FreePlanLimitNotice from "@/components/FreePlanNotice";
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import IndexRequestForm from "@/components/forms/IndexSettingsForm";
+import { toast } from "sonner";
+import { Status } from "@prisma/client";
+import { Badge } from "@/components/ui/badge";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -33,6 +36,7 @@ export default function IndexingPage() {
   const { user, setUser } = useUserContext();
   const [showDialog, setShowDialog] = useState(false);
   const [groupedIndexes, setGroupedIndexes] = useState<Record<string, ContextIndex[]>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (user?.indexSettings?.length) {
@@ -47,6 +51,52 @@ export default function IndexingPage() {
       setGroupedIndexes(grouped);
     }
   }, [user]);
+
+  async function startIndexing(databaseId: string) {
+    try {
+      if (!databaseId) {
+        return toast.error("Please select a database.");
+      }
+
+      setIsLoading(true);
+      const response = await fetch("/api/indexing/start", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ databaseId }),
+      });
+
+      if (!response.ok) {
+        return toast.error("Failed to start indexing.");
+      }
+
+      const { message } = await response.json();
+      setUser((prevUser) => {
+        if (!prevUser) return prevUser;
+
+        const updatedIndexSettings = prevUser.indexSettings.map((index) => {
+          if (index.database.id === databaseId) {
+            return {
+              ...index,
+              status: Status.IN_PROGRESS,
+            };
+          }
+          return index;
+        });
+
+        return {
+          ...prevUser,
+          indexSettings: updatedIndexSettings,
+        };
+      })
+      toast.success(message);
+    } catch (error) {
+      console.error("❌ Error starting indexing:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
@@ -93,11 +143,30 @@ export default function IndexingPage() {
               variants={fadeInUp}
             >
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">{db.name}</CardTitle>
-                  <CardDescription>
-                    {db.host}:{db.port} • {db.dbName}
-                  </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl">{db.name}</CardTitle>
+                    <CardDescription>
+                      {db.host}:{db.port} • {db.dbName}
+                    </CardDescription>
+                  </div>
+                  {user?.indexSettings.some(
+                    (index) => index.database.id === db.id && index.status === "IN_PROGRESS"
+                  ) ? (
+                    <div className="flex items-center select-none">
+                      <Badge className="px-2 py-1 mr-3 text-xs rounded-full bg-green-100 text-green-800 flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3 animate-spin" /> System Operational
+                      </Badge>
+                    </div>
+                  ) : (
+                    <Button
+                      className="cursor-pointer"
+                      disabled={isLoading}
+                      onClick={async () => await startIndexing(db.id)}
+                    >
+                      Start Indexing
+                    </Button>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {groupedIndexes[db.id]?.length ? (
@@ -161,6 +230,6 @@ export default function IndexingPage() {
           setUser={setUser}
         />
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 }

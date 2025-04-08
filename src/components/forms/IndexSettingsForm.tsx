@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { montserrat } from "@/fonts/fonts";
+import { cn } from "@/lib/utils";
 import { indexRequestSchema } from "@/schema/zod";
 import { TRANSFER } from "@/types/params";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Cluster, IndexParams, IndexType } from "@prisma/client";
+import { PublicKey } from "@solana/web3.js";
 import { motion } from "framer-motion";
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -96,6 +98,28 @@ export default function IndexRequestForm({ setShowIndexRequestForm, setCompleted
     }
   };
 
+  const [addr, setAddr] = useState("");
+  const [isValid, setIsValid] = useState(true);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (addr.trim() === "") {
+        setIsValid(true);
+        return;
+      }
+
+      try {
+        new PublicKey(addr);
+        setIsValid(true);
+      } catch {
+        setIsValid(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [addr]);
+
+
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
       <DialogHeader>
@@ -162,7 +186,16 @@ export default function IndexRequestForm({ setShowIndexRequestForm, setCompleted
 
         <div className="col-span-1 md:col-span-2">
           <Label>Target Address</Label>
-          <Input {...register("targetAddr")} placeholder="Enter target address" className="w-full" />
+          <Input
+            {...register("targetAddr")}
+            value={addr}
+            onChange={(e) => setAddr(e.target.value)}
+            placeholder="Enter target address"
+            className={cn("w-full", !isValid && "border-red-500")}
+          />
+          {!isValid && (
+            <p className="text-sm text-red-500 mt-1">Invalid Solana address</p>
+          )}
         </div>
 
         <div className="col-span-1 md:col-span-2">

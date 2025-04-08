@@ -21,8 +21,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="flex h-[calc(100vh-8.1rem)] relative">
-      <div className="absolute top-3 left-4 z-40 md:hidden">
-        <Button variant="secondary" size="icon" onClick={() => setMobileOpen(true)} className="cursor-pointer">
+      <div className="absolute top-3 left-4 z-50 md:hidden">
+        <Button variant="secondary" size="icon" onClick={() => {
+          console.log("CLICK");
+
+          setMobileOpen(true)
+        }} className="cursor-pointer z-40">
           <Menu className="w-5 h-5" />
         </Button>
       </div>
@@ -46,7 +50,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             exit={{ x: "-100%" }}
             transition={{ duration: 0.3 }}
           >
-            <div className="absolute top-4 right-4 z-50">
+            <div className="absolute top-4 right-4 z-40">
               <Button variant="ghost" size="icon" onClick={closeMobileSidebar}>
                 <X className="w-5 h-5" />
               </Button>
@@ -73,7 +77,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <Button variant="secondary" size="icon" onClick={() => setCollapsed(!collapsed)} className="cursor-pointer absolute top-3 left-4 z-40">
+        <Button
+          variant="secondary"
+          size="icon"
+          onClick={() => setCollapsed(!collapsed)}
+          className="cursor-pointer absolute top-3 left-4 z-40"
+        >
           <Menu className="w-5 h-5" />
         </Button>
         {children}

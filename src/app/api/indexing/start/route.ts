@@ -139,17 +139,16 @@ async function updateHeliusWebhook(indexSettings: IndexSettings, webhookParams: 
       txnStatus: "all",
     };
 
-    const response = await fetch(`${HELIUS_API_URL}/webhooks/${WEBHOOK_ID}?api-key=${HELIUS_API_KEY}`, {
-      method: "PUT",
-      headers: {
-        "Authorization": `${WEBHOOK_SECRET}`,
-      },
-      body: JSON.stringify(webhookBody),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Helius API error: ${errorText}`);
+    try {
+      await fetch(`${HELIUS_API_URL}/webhooks/${WEBHOOK_ID}?api-key=${HELIUS_API_KEY}`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `${WEBHOOK_SECRET}`,
+        },
+        body: JSON.stringify(webhookBody),
+      });
+    } catch (error) {
+      console.error("Error updating webhook:", error);
     }
 
     await prisma.params.upsert({
