@@ -6,6 +6,12 @@ export async function middleware(request: NextRequest) {
   const session = await auth();
 
   const isLoggedIn = !!session?.user;
+  if (!isLoggedIn) {
+    if (request.nextUrl.pathname.startsWith("/dashboard")) {
+      return NextResponse.redirect(new URL("/signin", request.url));
+    }
+  }
+
   const isAuthPage = request.nextUrl.pathname.startsWith("/signin");
 
   if (isAuthPage && isLoggedIn) {
@@ -15,7 +21,6 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Define protected routes
 export const config = {
-  matcher: ["/signin", "/"],
+  matcher: ["/signin", "/", "/dashboard/:path*"],
 };
