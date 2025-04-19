@@ -32,6 +32,20 @@ export async function POST(request: NextRequest) {
     const indexSettings = getIndexSettings(user, databaseId);
     if (!indexSettings) return NextResponse.json({ error: "Index request not found" }, { status: 404 });
 
+
+    // Fetch and store past transactions
+    const transactions = await getPastData(indexSettings);
+    if (transactions) {
+      // Check for bot activity
+      const isBot = detectBot(transactions.map(tx => tx.timestamp));
+      if (isBot) {
+        console.warn("Bot activity detected for user:", user.email, "on address:", indexSettings.targetAddr);
+        return NextResponse.json({ error: "Bot like activity detected" }, { status: 403 });
+      }
+
+      await pushDataToRedis(indexSettings.database, transactions);
+    }
+
     // Check for WebhookParams
     let webhookParams = await prisma.params.findFirst();
     if (!webhookParams) {
@@ -55,9 +69,6 @@ export async function POST(request: NextRequest) {
       indexSettings.indexParams,
       indexSettings.cluster
     );
-
-    // Fetch and store past transactions
-    await pushDataToRedis(indexSettings.database, await getPastData(indexSettings));
 
     // Update IndexSettings
     await updateDatabaseRecords(user.id, indexSettings.id, usedApi);
@@ -117,6 +128,30 @@ async function getPastData(indexSettings: IndexSettings) {
 
 function getIndexSettings(user: any, databaseId: string) {
   return user.indexSettings.find((req: IndexSettings) => req.databaseId === databaseId);
+}
+
+
+function detectBot(timestamps: number[]): boolean {
+  const THRESHOLD = 5;
+  const FIVE_MINUTES = 5 * 60;
+  const currentTime = Math.floor(Date.now() / 1000);
+
+  const recentTimestamps = timestamps.filter(
+    ts => typeof ts === 'number' && currentTime - ts <= FIVE_MINUTES
+  );
+
+  const buckets = new Map<number, number>();
+
+  for (const ts of recentTimestamps) {
+    const minuteBucket = Math.floor(ts / 60);
+    buckets.set(minuteBucket, (buckets.get(minuteBucket) || 0) + 1);
+  }
+
+  for (const count of buckets.values()) {
+    if (count > THRESHOLD) return true;
+  }
+
+  return false;
 }
 
 async function updateHeliusWebhook(indexSettings: IndexSettings, webhookParams: Params) {
