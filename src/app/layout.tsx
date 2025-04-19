@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { siteConfig } from "@/config/siteConfig";
 import { Inter } from "next/font/google";
 import "./globals.css";
+// import MaintenanceBanner from "@/components/MaintenanceBanner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -21,6 +22,7 @@ export default function RootLayout({
       <body
         className={`${inter.className} antialiased`}
       >
+        {/* <MaintenanceBanner /> */}
         <Providers>
           {children}
           <Toaster />

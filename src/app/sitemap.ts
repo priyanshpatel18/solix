@@ -28,7 +28,7 @@ function getRoutes(): MetadataRoute.Sitemap {
     if (entries.length === 0) {
       return;
     }
-
+""
     entries.forEach((entry) => {
       if (entry.isDirectory()) {
         const isParenthetical = entry.name.startsWith("(") && entry.name.endsWith(")");
