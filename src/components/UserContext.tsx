@@ -23,27 +23,35 @@ export interface ContextIndex extends IndexSettings {
   database: Database;
 }
 
-// New type includes setUser
 interface UserContextType {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  userData: Record<string, any[]> | null
+  setUserData: React.Dispatch<React.SetStateAction<Record<string, any[]> | null>>;
 }
 
-// Initialize context with undefined to enforce provider
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 // Provider with state
-export function UserProvider({ user: initialUser, children }: { user: User | null; children: React.ReactNode }) {
+export function UserProvider({
+  user: initialUser,
+  userData: initialData,
+  children,
+}: {
+  user: User | null;
+  userData: Record<string, any[]> | null;
+  children: React.ReactNode;
+}) {
   const [user, setUser] = useState<User | null>(initialUser);
+  const [userData, setUserData] = useState<Record<string, any[]> | null>(initialData);
 
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <UserContext.Provider value={{ user, setUser, userData, setUserData }}>
       {children}
     </UserContext.Provider>
   );
 }
 
-// Hook to use context
 export function useUserContext() {
   const context = useContext(UserContext);
   if (context === undefined) {

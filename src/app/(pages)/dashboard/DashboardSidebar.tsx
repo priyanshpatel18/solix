@@ -10,6 +10,7 @@ import {
   Database,
   Home,
   Layers,
+  Search,
   Settings,
   UserIcon,
 } from "lucide-react";
@@ -38,6 +39,7 @@ export default function DashboardSidebar({
     { name: "Overview", href: "/dashboard", icon: Home },
     { name: "Databases", href: "/dashboard/databases", icon: Database, count: databases },
     { name: "Indexing", href: "/dashboard/indexing", icon: Layers, count: indexJobs },
+    { name: "Explore", href: "/dashboard/explore", icon: Search },
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
     { name: "Subscription", href: "/dashboard/subscription", icon: CreditCard },
   ];

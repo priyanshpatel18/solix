@@ -19,28 +19,24 @@ const steps = [
     title: "Connect Database",
     description: "Connect your database to SolixDB for indexing.",
     action: "CONNECT",
-    link: "/dashboard",
     icon: <Database className="w-5 h-5" />,
   },
   {
     title: "Configure Parameters",
     description: "Specify tables, columns, and indexing criteria.",
     action: "CONFIGURE",
-    link: "/index-settings",
     icon: <Settings className="w-5 h-5" />,
   },
   {
     title: "Start Indexing",
     description: "Begin indexing your blockchain data.",
     action: "START",
-    link: "/indexing-progress",
     icon: <ArrowRight className="w-5 h-5" />,
   },
   {
     title: "Explore Data",
     description: "Query and analyze your indexed blockchain data.",
     action: "EXPLORE",
-    link: "/explorer",
     icon: <Search className="w-5 h-5" />,
   },
 ];
@@ -167,7 +163,7 @@ export default function HomePage() {
         await startIndexing();
         break;
       case "EXPLORE":
-        router.push("/dashboard");
+        router.push("/dashboard/explore");
         break;
       default:
         break;

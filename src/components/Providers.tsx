@@ -13,7 +13,7 @@ export default function Providers({ children }: ProviderProps) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light">
       <SessionProvider>
-        <UserProvider user={null}>
+        <UserProvider user={null} userData={null}>
           {children}
         </UserProvider>
       </SessionProvider>
